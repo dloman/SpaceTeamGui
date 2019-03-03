@@ -76,7 +76,7 @@ std::string GetRandomTextToDisplay()
 {
   static std::random_device RandomDevice;
   static std::mt19937 Generator(RandomDevice());
-  std::uniform_int_distribution<> Distribution(0, gMessages.size());;
+  std::uniform_int_distribution<> Distribution(0, gMessages.size() - 1);;
 
   return gMessages[Distribution(Generator)];
 }
@@ -103,7 +103,7 @@ auto gHorizontalData = GetRandomHorizontalData();
 auto gHorizontalUpdate = std::chrono::system_clock::now();
 
 auto gTextToDisplay = GetRandomTextToDisplay();
-std::string gCurrentText;
+std::string gCurrentText("");
 auto gTextUpdate = std::chrono::system_clock::now();
 ImFont* gpFont20;
 ImFont* gpFont30;
@@ -212,17 +212,22 @@ void DrawTaskPanel()
 
   ImGui::PopFont();
 
-
   if (gCurrentText.size() == gTextToDisplay.size())
   {
     using namespace std::chrono;
     float Progress = duration_cast<seconds>(
       system_clock::now() - gTextUpdate).count() / 20.0;
 
+    ImGui::SetCursorPos({0, 460});
+
+    ImGui::PushFont(gpFont30);
+
     ImGui::ProgressBar(
       Progress,
-      {-1,0},
-      (std::to_string(static_cast<int> (20 - 10*Progress)) +"s Remaining").c_str());
+      {-1,30},
+      (std::to_string(static_cast<int> (20 - 20*Progress)) +"s Remaining").c_str());
+
+    ImGui::PopFont();
   }
 
 
