@@ -14,14 +14,14 @@ std::vector<std::string> gMessages
 {
   "Enable poopshoot suction device",
   "Mike sux cox n dix",
-  "Swap poop deck",
+  "Swab poop deck",
   "Wish your mother a happy birthday",
   "Disable stranglet diffuser",
   "Chug some dingle",
-  "dangle your dongle",
-  "do something really really really cool",
-  "do something really really really cool, but like seriously",
-  "this one has a lot of words. like way more then it should but thats ok. actually this is kindof stupid there really is no reason for this many words."
+  "Dangle your dongle",
+  "Do something really really really cool",
+  "Do something really really really cool, but like seriously",
+  "This one has a lot of words. like way more then it should but thats ok. actually this is kindof stupid there really is no reason for this many words."
 };
 
 //------------------------------------------------------------------------------
@@ -105,6 +105,8 @@ auto gHorizontalUpdate = std::chrono::system_clock::now();
 auto gTextToDisplay = GetRandomTextToDisplay();
 std::string gCurrentText;
 auto gTextUpdate = std::chrono::system_clock::now();
+ImFont* gpFont20;
+ImFont* gpFont30;
 
 static const ImVec2 PlotSize = {440, 145};
 
@@ -182,8 +184,15 @@ void DrawTaskPanel()
 
   ImGui::SetWindowSize({820, 500});
 
-  ImGui::Button("Comply with the following instructions immediatly to avoid irreversible death:");
+  // Load Fonts
+  ImGui::PushFont(gpFont20);
 
+  ImGui::Button("Comply with the following instructions to avoid irreversible death:");
+
+  ImGui::Text("\n");
+  ImGui::PopFont();
+
+  ImGui::PushFont(gpFont30);
 
   if (gCurrentText.size() != gTextToDisplay.size())
   {
@@ -199,14 +208,23 @@ void DrawTaskPanel()
     gTextToDisplay = GetRandomTextToDisplay();
   }
 
-    ImGui::TextWrapped(gCurrentText.c_str());
+  ImGui::TextWrapped(gCurrentText.c_str());
 
-    if (gCurrentText.size() == gTextToDisplay.size())
-    {
-      float Progress = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - gTextUpdate).count() / 20.0;
+  ImGui::PopFont();
 
-      ImGui::ProgressBar(Progress, {-1,0}, "Time Remaining");
-    }
+
+  if (gCurrentText.size() == gTextToDisplay.size())
+  {
+    using namespace std::chrono;
+    float Progress = duration_cast<seconds>(
+      system_clock::now() - gTextUpdate).count() / 20.0;
+
+    ImGui::ProgressBar(
+      Progress,
+      {-1,0},
+      (std::to_string(static_cast<int> (20 - 10*Progress)) +"s Remaining").c_str());
+  }
+
 
   ImGui::End();
 }
@@ -246,6 +264,14 @@ int main()
   sf::RenderWindow window(sf::VideoMode(1280, 800), "H4ckerSp4ce t3AM");
   window.setFramerateLimit(60);
   ImGui::SFML::Init(window);
+
+  ImGuiIO& io = ImGui::GetIO();
+  io.Fonts->AddFontDefault();
+
+  gpFont20 = io.Fonts->AddFontFromFileTTF("/home/dloman/ProggyClean.ttf", 20.f);
+  gpFont30 = io.Fonts->AddFontFromFileTTF("/home/dloman/ProggyClean.ttf", 30.f);
+
+  ImGui::SFML::UpdateFontTexture();
 
   sf::Clock deltaClock;
 
