@@ -5,7 +5,7 @@
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
-#include <Random/Random.hpp>
+#include "Random.hpp"
 #include <chrono>
 
 using namespace std::literals;
@@ -183,6 +183,8 @@ void DrawTaskPanel()
     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
   ImGui::SetWindowSize({820, 500});
+
+  ImGui::SetWindowPos({460, 0});
 
   // Load Fonts
   ImGui::PushFont(gpFont20);
