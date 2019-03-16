@@ -29,10 +29,6 @@ include_directories(${SFML_INCLUDE_DIR})
 include_directories(Modules/imgui)
 include_directories(Modules/imgui-sfml)
 
-find_package(DanLib REQUIRED)
-
-include_directories(${DanLib_INCLUDE_DIR})
-
 include_directories(src)
 
 set(CMAKE_DEBUG_POSTFIX d)
