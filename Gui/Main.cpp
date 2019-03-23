@@ -5,7 +5,7 @@
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
-#include "Random.hpp"
+#include <Utility/Random.hpp>
 #include <chrono>
 
 using namespace std::literals;
@@ -29,14 +29,14 @@ std::vector<std::string> gMessages
 std::array<float, 8> GetData()
 {
   return {
-    dl::random::GetUniform<float>(),
-    dl::random::GetUniform<float>(),
-    dl::random::GetUniform<float>(),
-    dl::random::GetUniform<float>(),
-    dl::random::GetUniform<float>(),
-    dl::random::GetUniform<float>(),
-    dl::random::GetUniform<float>(),
-    dl::random::GetUniform<float>()
+    st::random::GetUniform<float>(),
+    st::random::GetUniform<float>(),
+    st::random::GetUniform<float>(),
+    st::random::GetUniform<float>(),
+    st::random::GetUniform<float>(),
+    st::random::GetUniform<float>(),
+    st::random::GetUniform<float>(),
+    st::random::GetUniform<float>()
   };
 }
 

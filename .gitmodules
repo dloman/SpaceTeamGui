@@ -4,3 +4,6 @@
 [submodule "Modules/imgui-sfml"]
 	path = Modules/imgui-sfml
 	url = https://github.com/eliasdaler/imgui-sfml.git
+[submodule "Modules/fmt"]
+	path = Modules/fmt
+	url = https://github.com/fmtlib/fmt.git

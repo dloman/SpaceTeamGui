@@ -26,10 +26,18 @@ find_package(SFML 2 COMPONENTS system window graphics REQUIRED)
 
 include_directories(${SFML_INCLUDE_DIR})
 
+find_package(Boost REQUIRED)
+
+include_directories(${Boost_INCLUDE_DIRS})
+
+message(" !!!!!!   ${Boost_INCLUDE_DIRS} ")
+
 include_directories(Modules/imgui)
 include_directories(Modules/imgui-sfml)
+add_subdirectory(Modules/fmt)
+include_directories(Modules/fmt/include)
 
-include_directories(src)
+include_directories(.)
 
 set(CMAKE_DEBUG_POSTFIX d)
 
@@ -49,9 +57,17 @@ target_link_libraries(
   ${SFML_LIBRARIES}
   )
 
+add_library(
+  SpaceTeam
+  SpaceTeam/Analog.cpp
+  SpaceTeam/Digital.cpp
+  SpaceTeam/Input.cpp
+  SpaceTeam/Momentary.cpp
+  )
+
 add_executable(
   SpaceTeamGui
-  src/Main.cpp
+  Gui/Main.cpp
   )
 
 target_link_libraries(
