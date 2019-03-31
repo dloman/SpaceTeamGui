@@ -1,4 +1,5 @@
 #include "Digital.hpp"
+#include <fmt/format.h>
 #include <random>
 
 using st::Digital;
@@ -11,9 +12,11 @@ namespace
   {
     const static std::vector<std::string> Verbs
     {
-      "set",
-      "switch",
-      "flip",
+      "Set",
+      "Switch",
+      "Flip",
+      "Change",
+      "Adjust",
     };
 
     static std::random_device RandomDevice;
@@ -28,6 +31,7 @@ namespace
 Digital::Digital(const boost::property_tree::ptree& Tree)
 : Input(Tree),
   mDesiredState(false),
+  mCurrentState(false),
   mOnLabel(Tree.get<std::string>("On Label")),
   mOffLabel(Tree.get<std::string>("Off Label"))
 {
@@ -35,16 +39,26 @@ Digital::Digital(const boost::property_tree::ptree& Tree)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-std::string Digital::GetNewCommand(double CurrentState)
+std::string Digital::GetNewCommand()
 {
-  mDesiredState = CurrentState;
+  mDesiredState = !mCurrentState;
 
-  return GetVerb() + " to " + (mDesiredState ? mOnLabel : mOffLabel);
+  return fmt::format("{} {} to {}",
+    GetVerb(),
+    mLabel,
+    (mDesiredState ? mOnLabel : mOffLabel));
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool Digital::IsCommandCompleted(bool State)
+bool Digital::IsCommandCompleted() const
 {
-  return State == mDesiredState;
+  return mCurrentState == mDesiredState;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void Digital::SetCurrentState(bool State)
+{
+  mCurrentState = State;
 }

@@ -35,10 +35,13 @@ namespace
 
     for (const auto& [Name, SubTree] : Tree)
     {
-      Thresholds.emplace_back(st::Threshold{
-        SubTree.get<double>("Start"),
-        SubTree.get<double>("Stop"),
-        SubTree.get<std::string>("Label")});
+      if (Name == std::string("Threshold"))
+      {
+        Thresholds.emplace_back(st::Threshold{
+          SubTree.get<double>("Start"),
+          SubTree.get<double>("Stop"),
+          SubTree.get<std::string>("Label")});
+      }
     }
 
     return Thresholds;
@@ -59,25 +62,26 @@ Analog::Analog(const boost::property_tree::ptree& Tree)
 {
 }
 
+#include <iostream>
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-std::string Analog::GetNewCommand(double CurrentState)
+std::string Analog::GetNewCommand()
 {
-  mDesiredValue = GetNewValue(GetThreshold(CurrentState));
+  mDesiredValue = GetNewValue(GetThreshold(mCurrentState));
 
   return
     fmt::format(
       "{:s} {:s} to {:s}",
-      mSetWords[st::random::GetUniform<size_t>(0, mSetWords.size()-1)] +
+      mSetWords[st::random::GetUniform<size_t>(0, mSetWords.size()-1)],
       mLabel,
       GetThreshold(mDesiredValue).mLabel);
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool Analog::IsCommandCompleted(double CurrentState)
+bool Analog::IsCommandCompleted() const
 {
-  return (mDesiredValue == GetThreshold(CurrentState).mStart);
+  return (mDesiredValue == GetThreshold(mCurrentState).mStart);
 }
 
 //-----------------------------------------------------------------------------
@@ -96,13 +100,20 @@ const st::Threshold& Analog::GetThreshold(double Value) const
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-double Analog::GetNewValue(const Threshold& CurrentState)
+void Analog::SetCurrentState(double State)
+{
+  mCurrentState = State;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+double Analog::GetNewValue(const Threshold& CurrentThreshold)
 {
   const auto& NewThreshold = GetThreshold(GetRandomValue());
 
-  if (std::abs(NewThreshold.mStart - CurrentState.mStart) > 0.01)
+  if (std::abs(NewThreshold.mStart - CurrentThreshold.mStart) > 0.01)
   {
-    return GetNewValue(CurrentState);
+    return GetNewValue(CurrentThreshold);
   }
 
   return NewThreshold.mStart;

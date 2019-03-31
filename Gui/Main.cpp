@@ -5,25 +5,13 @@
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
+#include <SpaceTeam/Game.hpp>
 #include <Utility/Random.hpp>
 #include <chrono>
 
 using namespace std::literals;
 
-std::vector<std::string> gMessages
-{
-  "Enable poopshoot suction device",
-  "Mike sux cox n dix",
-  "Swab poop deck",
-  "Wish your mother a happy birthday",
-  "Disable stranglet diffuser",
-  "Chug some dingle",
-  "Dangle your dongle",
-  "Do something really really really cool",
-  "Do something really really really cool, but like seriously",
-  "This one has a lot of words. like way more then it should but thats ok. actually this is kindof stupid there really is no reason for this many words."
-};
-
+std::unique_ptr<st::Game> gpGame;
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 std::array<float, 8> GetData()
@@ -71,17 +59,6 @@ std::array<float, 11> GetRandomHorizontalData()
 }
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-std::string GetRandomTextToDisplay()
-{
-  static std::random_device RandomDevice;
-  static std::mt19937 Generator(RandomDevice());
-  std::uniform_int_distribution<> Distribution(0, gMessages.size() - 1);;
-
-  return gMessages[Distribution(Generator)];
-}
-
-//------------------------------------------------------------------------------
 // Data
 //------------------------------------------------------------------------------
 auto gHistogram1Data = GetData();
@@ -102,7 +79,7 @@ auto gRecycleBin = GetRandomTemp() > .5f;
 auto gHorizontalData = GetRandomHorizontalData();
 auto gHorizontalUpdate = std::chrono::system_clock::now();
 
-auto gTextToDisplay = GetRandomTextToDisplay();
+std::string gTextToDisplay("");
 std::string gCurrentText("");
 auto gTextUpdate = std::chrono::system_clock::now();
 ImFont* gpFont20;
@@ -207,7 +184,7 @@ void DrawTaskPanel()
   {
     gCurrentText = "";
 
-    gTextToDisplay = GetRandomTextToDisplay();
+    gTextToDisplay = gpGame->GetNextInputDisplay();
   }
 
   ImGui::TextWrapped(gCurrentText.c_str());
@@ -268,6 +245,12 @@ void DrawGraphPanel()
 //------------------------------------------------------------------------------
 int main()
 {
+  gpGame = std::make_unique<st::Game>();
+
+  gCurrentText = "";
+
+  gTextToDisplay = gpGame->GetNextInputDisplay();
+
   sf::RenderWindow window(sf::VideoMode(1280, 800), "H4ckerSp4ce t3AM");
   window.setFramerateLimit(60);
   ImGui::SFML::Init(window);
@@ -281,6 +264,7 @@ int main()
   ImGui::SFML::UpdateFontTexture();
 
   sf::Clock deltaClock;
+
 
   while (window.isOpen())
   {

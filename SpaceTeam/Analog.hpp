@@ -17,9 +17,11 @@ namespace st
 
       Analog(const boost::property_tree::ptree& Tree);
 
-      std::string GetNewCommand(double CurrentState);
+      std::string GetNewCommand();
 
-      bool IsCommandCompleted(double CurrentState);
+      bool IsCommandCompleted() const;
+
+      void SetCurrentState(double State);
 
     private:
 
@@ -30,6 +32,8 @@ namespace st
       static const std::vector<std::string> mSetWords;
 
       double mDesiredValue;
+
+      double mCurrentState;
 
       std::vector<Threshold> mThresholds;
   };

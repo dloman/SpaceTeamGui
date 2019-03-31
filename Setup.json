@@ -1,0 +1,31 @@
+{
+  "Input" : {
+    "Type" : "Analog",
+    "Id" : 0,
+    "Label" : "Dongle",
+    "Threshold" : {
+      "Label" : "Dangle",
+      "Start" : 0.0,
+      "Stop" : 2.0
+    },
+    "Threshold" : {
+      "Label" : "Dungle",
+      "Start" : 2.0,
+      "Stop" : 5.0
+    }
+  },
+  "Input" : {
+    "Type" : "Digital",
+    "Id" : 1,
+    "Label" : "Air Supply",
+    "On Label" : "Greatest Hits",
+    "Off Label" : "Off"
+  },
+  "Input" : {
+    "Type" : "Momentary",
+    "Id" : 2,
+    "Label" : "",
+    "Default Value" : 0,
+    "Message" : "Call your Mother"
+  }
+}

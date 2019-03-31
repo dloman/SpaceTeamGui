@@ -44,7 +44,7 @@ namespace st::random
 
       static std::mt19937 generator(randomDevice());
 
-      static std::uniform_int_distribution<T> distribution;
+      std::uniform_int_distribution<T> distribution(min, max);
 
       return distribution(generator);
     }
@@ -58,7 +58,7 @@ namespace st::random
 
       static std::mt19937 generator(randomDevice());
 
-      static std::uniform_real_distribution<T> distribution;
+      std::uniform_real_distribution<T> distribution(min, max);
 
       return distribution(generator);
     }

@@ -61,8 +61,14 @@ add_library(
   SpaceTeam
   SpaceTeam/Analog.cpp
   SpaceTeam/Digital.cpp
+  SpaceTeam/Game.cpp
   SpaceTeam/Input.cpp
   SpaceTeam/Momentary.cpp
+  )
+
+target_link_libraries(
+  SpaceTeam
+  fmt::fmt
   )
 
 add_executable(
@@ -72,6 +78,7 @@ add_executable(
 
 target_link_libraries(
   SpaceTeamGui
+  SpaceTeam
   imgui-sfml
   ${SFML_LIBRARIES}
   ${OpenGL_LIBRARIES}

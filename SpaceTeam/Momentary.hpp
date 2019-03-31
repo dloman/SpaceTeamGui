@@ -10,12 +10,18 @@ namespace st
 
       Momentary(const boost::property_tree::ptree& Tree);
 
-      std::string GetNewCommand();
+      const std::string& GetNewCommand();
 
-      bool IsCommandCompleted(bool Input);
+      bool IsCommandCompleted() const;
+
+      void SetCurrentState(bool State);
 
     private:
 
-      const double mDefaultValue;
+      const bool mDefaultValue;
+
+      const std::string mMessage;
+
+      bool mCurrentState;
   };
 }

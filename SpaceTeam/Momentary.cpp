@@ -6,21 +6,29 @@ using st::Momentary;
 //-----------------------------------------------------------------------------
 Momentary::Momentary(const boost::property_tree::ptree& Tree)
 : Input(Tree),
-  mDefaultValue(Tree.get<double>("Default Value"))
+  mDefaultValue(Tree.get<double>("Default Value")),
+  mMessage(Tree.get<std::string>("Message")),
+  mCurrentState(mDefaultValue)
 {
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-std::string Momentary::GetNewCommand()
+const std::string& Momentary::GetNewCommand()
 {
-  return "Farts";
+  return mMessage;
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool Momentary::IsCommandCompleted(bool Input)
+bool Momentary::IsCommandCompleted() const
 {
-  return Input != mDefaultValue;
+  return mCurrentState != mDefaultValue;
 }
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void Momentary::SetCurrentState(bool State)
+{
+  mCurrentState = State;
+}
