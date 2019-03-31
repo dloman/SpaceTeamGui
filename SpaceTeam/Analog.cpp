@@ -1,4 +1,5 @@
 #include "Analog.hpp"
+#include <SpaceTeam/Success.hpp>
 #include <Utility/Random.hpp>
 #include <fmt/format.h>
 
@@ -62,11 +63,12 @@ Analog::Analog(const boost::property_tree::ptree& Tree)
 {
 }
 
-#include <iostream>
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 std::string Analog::GetNewCommand()
 {
+  mIsActive = true;
+
   mDesiredValue = GetNewValue(GetThreshold(mCurrentState));
 
   return
@@ -79,9 +81,35 @@ std::string Analog::GetNewCommand()
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool Analog::IsCommandCompleted() const
+bool Analog::IsInCorrectState() const
 {
-  return (mDesiredValue == GetThreshold(mCurrentState).mStart);
+ return (mDesiredValue == GetThreshold(mCurrentState).mStart);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void Analog::IsCorrect(st::Success& Success)
+{
+  if (mIsActive)
+  {
+    if (IsInCorrectState())
+    {
+      mIsActive = false;
+
+      Success.mIsActiveCompleted = true;
+    }
+
+    return;
+  }
+
+  const auto Correct = IsInCorrectState();
+
+  if (!Correct)
+  {
+    mDesiredValue = GetThreshold(mCurrentState).mStart;
+
+    Success.mInactiveFailCount++;
+  }
 }
 
 //-----------------------------------------------------------------------------

@@ -9,3 +9,10 @@ Input::Input(const boost::property_tree::ptree& Tree)
   mLabel(Tree.get<std::string>("Label"))
 {
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+unsigned Input::GetId()
+{
+  return mId;
+}

@@ -4,6 +4,8 @@
 
 namespace st
 {
+  struct Success;
+
   class Digital : public st::Input
   {
     public:
@@ -12,11 +14,15 @@ namespace st
 
       std::string GetNewCommand();
 
-      bool IsCommandCompleted() const;
+      void IsCorrect(st::Success&);
 
       void SetCurrentState(bool State);
 
+      void Update();
+
     private:
+
+      bool IsInCorrectState() const;
 
       bool mDesiredState;
 

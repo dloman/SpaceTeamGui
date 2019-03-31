@@ -1,4 +1,5 @@
 #include "Digital.hpp"
+#include <SpaceTeam/Success.hpp>
 #include <fmt/format.h>
 #include <random>
 
@@ -41,6 +42,8 @@ Digital::Digital(const boost::property_tree::ptree& Tree)
 //-----------------------------------------------------------------------------
 std::string Digital::GetNewCommand()
 {
+  mIsActive = true;
+
   mDesiredState = !mCurrentState;
 
   return fmt::format("{} {} to {}",
@@ -51,9 +54,36 @@ std::string Digital::GetNewCommand()
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool Digital::IsCommandCompleted() const
+bool Digital::IsInCorrectState() const
 {
-  return mCurrentState == mDesiredState;
+  return (mCurrentState == mDesiredState);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void Digital::IsCorrect(st::Success& Success)
+{
+  if (mIsActive)
+  {
+    if (IsInCorrectState())
+    {
+      mIsActive = false;
+
+      Success.mIsActiveCompleted = true;
+    }
+    return;
+  }
+
+  const auto Correct = IsInCorrectState();
+
+  if (!Correct)
+  {
+    mDesiredState = mCurrentState;
+
+    Success.mInactiveFailCount++;
+  }
+
+  return;
 }
 
 //-----------------------------------------------------------------------------

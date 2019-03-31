@@ -4,6 +4,8 @@
 
 namespace st
 {
+  struct Success;
+
   struct Threshold
   {
     const double mStart;
@@ -19,11 +21,13 @@ namespace st
 
       std::string GetNewCommand();
 
-      bool IsCommandCompleted() const;
+      void IsCorrect(st::Success&);
 
       void SetCurrentState(double State);
 
     private:
+
+      bool IsInCorrectState() const;
 
       double GetNewValue(const Threshold& CurrentState);
 

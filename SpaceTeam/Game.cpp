@@ -1,4 +1,5 @@
 #include "Game.hpp"
+#include <SpaceTeam/Success.hpp>
 #include <Utility/Visitor.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <random>
@@ -47,7 +48,8 @@ std::vector<st::InputVariant> GetInputs(const std::string& InputFile)
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 Game::Game()
-: mInputs(GetInputs("Setup.json"))
+: mInputs(GetInputs("Setup.json")),
+  moCurrentActiveVariant(std::nullopt)
 {
 }
 
@@ -59,7 +61,53 @@ std::string Game::GetNextInputDisplay()
   static std::mt19937 Generator(RandomDevice());
   std::uniform_int_distribution<> Distribution(0, mInputs.size() - 1);;
 
-  auto& Variant = mInputs[Distribution(Generator)];
+  moCurrentActiveVariant = mInputs[Distribution(Generator)];
 
-  return std::visit([] (auto& Input) { return Input.GetNewCommand();}, Variant);
+  return std::visit(
+    [] (auto& Input) { return Input.GetNewCommand();},
+    moCurrentActiveVariant->get());
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+double Game::GetCurrentState(const InputVariant& Input)
+{
+  return 0.0; //TODO
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void Game::UpdateCurrentState()
+{
+  for (const auto& Input : mInputs)
+  {
+    auto CurrentState = GetCurrentState(Input);
+
+    return std::visit(st::Visitor{
+      [CurrentState] (st::Analog& Input)
+      {
+        return Input.SetCurrentState(CurrentState);
+      },
+      [CurrentState] (auto& Input)
+      {
+        return Input.SetCurrentState(std::abs(CurrentState - 0.0) > 0.1);
+      }},
+      moCurrentActiveVariant->get());
+  }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+st::Success Game::GetSuccess()
+{
+  st::Success Success;
+
+  for(auto& InputVariant : mInputs)
+  {
+    std::visit(
+      [&Success] (auto& Input) { return Input.IsCorrect(Success); },
+      InputVariant);
+  }
+
+  return Success;
 }

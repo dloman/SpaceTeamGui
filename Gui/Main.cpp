@@ -6,6 +6,7 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SpaceTeam/Game.hpp>
+#include <SpaceTeam/Success.hpp>
 #include <Utility/Random.hpp>
 #include <chrono>
 
@@ -148,6 +149,22 @@ void DrawDataPanel()
 }
 
 #include <iostream>
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void ResetActionText()
+{
+  gCurrentText = "";
+
+  gTextToDisplay = gpGame->GetNextInputDisplay();
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void SendSuccess(bool Success)
+{
+}
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 void DrawTaskPanel()
@@ -182,9 +199,9 @@ void DrawTaskPanel()
   }
   else if (std::chrono::system_clock::now() - gTextUpdate > 20s)
   {
-    gCurrentText = "";
+    ResetActionText();
 
-    gTextToDisplay = gpGame->GetNextInputDisplay();
+    SendSuccess(false);
   }
 
   ImGui::TextWrapped(gCurrentText.c_str());
@@ -247,9 +264,7 @@ int main()
 {
   gpGame = std::make_unique<st::Game>();
 
-  gCurrentText = "";
-
-  gTextToDisplay = gpGame->GetNextInputDisplay();
+  ResetActionText();
 
   sf::RenderWindow window(sf::VideoMode(1280, 800), "H4ckerSp4ce t3AM");
   window.setFramerateLimit(60);
@@ -265,9 +280,22 @@ int main()
 
   sf::Clock deltaClock;
 
-
   while (window.isOpen())
   {
+    const auto Success = gpGame->GetSuccess();
+
+    if (Success.mIsActiveCompleted)
+    {
+      ResetActionText();
+
+      SendSuccess(true);
+    }
+
+    for (auto i = 0u; i < Success.mInactiveFailCount; ++i)
+    {
+      SendSuccess(false);
+    }
+
     sf::Event event;
     while (window.pollEvent(event))
     {

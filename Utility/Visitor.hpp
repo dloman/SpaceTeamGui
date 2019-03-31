@@ -1,6 +1,6 @@
 #pragma once
 
-namespace util
+namespace st
 {
   template<class... Ts>
   struct Visitor : Ts...
@@ -10,11 +10,4 @@ namespace util
 
   template<class... Ts>
   Visitor(Ts...) -> Visitor<Ts...>;
-
-  template<class... Ts>
-  Visitor<Ts...> MakeVisitor(Ts&&... ts)
-  {
-    return Visitor<Ts...>{std::forward<Ts>(ts)...};
-  }
-
 }

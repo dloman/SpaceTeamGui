@@ -1,4 +1,5 @@
 #include "Momentary.hpp"
+#include <SpaceTeam/Success.hpp>
 
 using st::Momentary;
 
@@ -8,7 +9,8 @@ Momentary::Momentary(const boost::property_tree::ptree& Tree)
 : Input(Tree),
   mDefaultValue(Tree.get<double>("Default Value")),
   mMessage(Tree.get<std::string>("Message")),
-  mCurrentState(mDefaultValue)
+  mCurrentState(mDefaultValue),
+  mLastToggle(std::chrono::milliseconds(0))
 {
 }
 
@@ -16,14 +18,53 @@ Momentary::Momentary(const boost::property_tree::ptree& Tree)
 //-----------------------------------------------------------------------------
 const std::string& Momentary::GetNewCommand()
 {
+  mIsActive = true;
+
+  using namespace std::chrono;
+
+  mLastToggle = time_point<system_clock>(milliseconds(0));
+
   return mMessage;
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool Momentary::IsCommandCompleted() const
+bool Momentary::IsPressed()
 {
   return mCurrentState != mDefaultValue;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void Momentary::IsCorrect(st::Success& Success)
+{
+  using namespace std::chrono;
+
+  if ((system_clock::now() - mLastToggle) < milliseconds(60))
+  {
+    return;
+  }
+
+  if (mIsActive)
+  {
+    if (IsPressed())
+    {
+      mIsActive = false;
+
+      Success.mIsActiveCompleted = true;
+    }
+
+    return;
+  }
+
+  if (IsPressed())
+  {
+    mLastToggle = system_clock::now();
+
+    Success.mInactiveFailCount++;
+  }
+
+  return;
 }
 
 //-----------------------------------------------------------------------------
