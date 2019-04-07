@@ -22,6 +22,10 @@ add_definitions(-fPIC)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+find_package(DanLib REQUIRED)
+
+include_directories(${DanLib_INCLUDE_DIR})
+
 find_package(SFML 2 COMPONENTS system window graphics REQUIRED)
 
 include_directories(${SFML_INCLUDE_DIR})
@@ -31,6 +35,12 @@ find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 message(" !!!!!!   ${Boost_INCLUDE_DIRS} ")
+
+find_package(OpenSSL REQUIRED)
+
+include_directories(${OPENSSL_INCLUDE_DIR})
+
+find_package(Threads)
 
 include_directories(Modules/imgui)
 include_directories(Modules/imgui-sfml)
@@ -72,6 +82,18 @@ target_link_libraries(
   )
 
 add_executable(
+  SpaceTeamServer
+  Server/Server.cpp
+  )
+
+target_link_libraries(
+  SpaceTeamServer
+  SpaceTeam
+  DanLibTcp
+  ${CMAKE_THREAD_LIBS_INIT}
+  )
+
+add_executable(
   SpaceTeamGui
   Gui/Main.cpp
   )
@@ -80,6 +102,8 @@ target_link_libraries(
   SpaceTeamGui
   SpaceTeam
   imgui-sfml
+  DanLibTcp
   ${SFML_LIBRARIES}
   ${OpenGL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
   )

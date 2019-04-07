@@ -1,7 +1,7 @@
 #include "Game.hpp"
 #include <SpaceTeam/Success.hpp>
 #include <Utility/Visitor.hpp>
-#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <random>
 
 using st::Game;
@@ -27,15 +27,12 @@ st::InputVariant GetInput(const boost::property_tree::ptree& Tree)
 
   throw std::logic_error("unreachable");
 }
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-std::vector<st::InputVariant> GetInputs(const std::string& InputFile)
+std::vector<st::InputVariant> GetInputs(boost::property_tree::ptree& Tree)
 {
   std::vector<st::InputVariant> Inputs;
-
-  boost::property_tree::ptree Tree;
-
-  boost::property_tree::read_json(InputFile, Tree);
 
   for (const auto& [Label, SubTree]: Tree)
   {
@@ -47,9 +44,10 @@ std::vector<st::InputVariant> GetInputs(const std::string& InputFile)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-Game::Game()
-: mInputs(GetInputs("Setup.json")),
-  moCurrentActiveVariant(std::nullopt)
+Game::Game(boost::property_tree::ptree& Tree)
+: mInputs(GetInputs(Tree)),
+  moCurrentActiveVariant(std::nullopt),
+  mLastResetTime(std::chrono::milliseconds(0))
 {
 }
 
@@ -62,6 +60,8 @@ std::string Game::GetNextInputDisplay()
   std::uniform_int_distribution<> Distribution(0, mInputs.size() - 1);;
 
   moCurrentActiveVariant = mInputs[Distribution(Generator)];
+
+  mLastResetTime = std::chrono::system_clock::now();
 
   return std::visit(
     [] (auto& Input) { return Input.GetNewCommand();},
@@ -110,4 +110,11 @@ st::Success Game::GetSuccess()
   }
 
   return Success;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+std::chrono::time_point<std::chrono::system_clock> Game::GetLastResetTime() const
+{
+  return mLastResetTime;
 }

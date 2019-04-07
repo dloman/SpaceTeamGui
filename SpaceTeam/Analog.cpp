@@ -8,13 +8,6 @@ namespace
   constexpr double MaxVoltage = 5.0;
   //---------------------------------------------------------------------------
   //---------------------------------------------------------------------------
-  double GetRandomValue()
-  {
-    return st::random::GetUniform(0.0, MaxVoltage);
-  }
-
-  //---------------------------------------------------------------------------
-  //---------------------------------------------------------------------------
   template<typename ContainerType, typename ValueType>
   typename ContainerType::const_iterator FindClosest(
     ContainerType Container,
@@ -137,9 +130,11 @@ void Analog::SetCurrentState(double State)
 //-----------------------------------------------------------------------------
 double Analog::GetNewValue(const Threshold& CurrentThreshold)
 {
-  const auto& NewThreshold = GetThreshold(GetRandomValue());
+  const auto& NewThreshold = mThresholds.at(
+    st::random::GetUniform(static_cast<size_t>(0),
+    mThresholds.size() - 1));
 
-  if (std::abs(NewThreshold.mStart - CurrentThreshold.mStart) > 0.01)
+  if (std::abs(NewThreshold.mStart - CurrentThreshold.mStart) < 0.1)
   {
     return GetNewValue(CurrentThreshold);
   }

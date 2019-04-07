@@ -1,18 +1,27 @@
 #include <imgui.h>
 #include <imgui-SFML.h>
 
+#include <SpaceTeam/Game.hpp>
+#include <SpaceTeam/Success.hpp>
+#include <Utility/Random.hpp>
+
+#include <Tcp/Client.hpp>
+#include <Robot/PacketEncoder.hpp>
+#include <Robot/PacketDecoder.hpp>
+
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
-#include <SpaceTeam/Game.hpp>
-#include <SpaceTeam/Success.hpp>
-#include <Utility/Random.hpp>
+
+#include <boost/property_tree/json_parser.hpp>
+#include <fmt/format.h>
 #include <chrono>
 
 using namespace std::literals;
 
-std::unique_ptr<st::Game> gpGame;
+std::unique_ptr<dl::tcp::Client<dl::tcp::Session>> gpClient;
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 std::array<float, 8> GetData()
@@ -148,15 +157,13 @@ void DrawDataPanel()
   ImGui::End();
 }
 
-#include <iostream>
-
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void ResetActionText()
+void ResetActionText(const std::string& Text)
 {
   gCurrentText = "";
 
-  gTextToDisplay = gpGame->GetNextInputDisplay();
+  gTextToDisplay = Text;
 }
 
 //------------------------------------------------------------------------------
@@ -199,9 +206,9 @@ void DrawTaskPanel()
   }
   else if (std::chrono::system_clock::now() - gTextUpdate > 20s)
   {
-    ResetActionText();
-
     SendSuccess(false);
+
+    ResetActionText("");
   }
 
   ImGui::TextWrapped(gCurrentText.c_str());
@@ -260,11 +267,46 @@ void DrawGraphPanel()
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+void SendState(const std::string& State)
+{
+  gpClient->Write(State);
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+std::string GetState()
+{
+  std::string State;
+
+  //TODO
+  return State;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void OnRx(const std::string& Bytes)
+{
+  std::istringstream Stream(Bytes);
+
+  boost::property_tree::ptree Tree;
+
+  boost::property_tree::read_json(Stream, Tree);
+
+  if (const auto oText = Tree.get_optional<std::string>("reset"))
+  {
+    ResetActionText(*oText);
+  }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int main()
 {
-  gpGame = std::make_unique<st::Game>();
-
-  ResetActionText();
+  gpClient = std::make_unique<dl::tcp::Client<dl::tcp::Session>>(
+    dl::tcp::ClientSettings<dl::tcp::Session>{
+      .mOnRxCallback = OnRx,
+      .mConnectionCallback = [] (const auto&) { fmt::print("connected\n");},
+      .mConnectionErrorCallback = ResetActionText});
 
   sf::RenderWindow window(sf::VideoMode(1280, 800), "H4ckerSp4ce t3AM");
   window.setFramerateLimit(60);
@@ -282,19 +324,7 @@ int main()
 
   while (window.isOpen())
   {
-    const auto Success = gpGame->GetSuccess();
-
-    if (Success.mIsActiveCompleted)
-    {
-      ResetActionText();
-
-      SendSuccess(true);
-    }
-
-    for (auto i = 0u; i < Success.mInactiveFailCount; ++i)
-    {
-      SendSuccess(false);
-    }
+    SendState(GetState());
 
     sf::Event event;
     while (window.pollEvent(event))
