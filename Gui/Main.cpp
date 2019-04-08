@@ -21,6 +21,7 @@
 using namespace std::literals;
 
 std::unique_ptr<dl::tcp::Client<dl::tcp::Session>> gpClient;
+bool gWait = false;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -168,12 +169,6 @@ void ResetActionText(const std::string& Text)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void SendSuccess(bool Success)
-{
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void DrawTaskPanel()
 {
   ImGui::Begin(
@@ -204,18 +199,12 @@ void DrawTaskPanel()
     gTextUpdate = std::chrono::system_clock::now();
 
   }
-  else if (std::chrono::system_clock::now() - gTextUpdate > 20s)
-  {
-    SendSuccess(false);
-
-    ResetActionText("");
-  }
 
   ImGui::TextWrapped(gCurrentText.c_str());
 
   ImGui::PopFont();
 
-  if (gCurrentText.size() == gTextToDisplay.size())
+  if (!gWait && gCurrentText.size() == gTextToDisplay.size())
   {
     using namespace std::chrono;
     float Progress = duration_cast<seconds>(
@@ -295,9 +284,25 @@ void OnRx(const std::string& Bytes)
   if (const auto oText = Tree.get_optional<std::string>("reset"))
   {
     ResetActionText(*oText);
+
+    if (const auto oWait = Tree.get_optional<std::string>("wait"))
+    {
+      gWait = true;
+
+      return;
+    }
   }
+  gWait = false;
 }
 
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void OnError(const std::string& Error)
+{
+  gCurrentText = gTextToDisplay = "H4ckersp4c3 Te4m!1 \n\nAre you ready?";
+
+  gWait = true;
+}
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 int main()
@@ -306,7 +311,7 @@ int main()
     dl::tcp::ClientSettings<dl::tcp::Session>{
       .mOnRxCallback = OnRx,
       .mConnectionCallback = [] (const auto&) { fmt::print("connected\n");},
-      .mConnectionErrorCallback = ResetActionText});
+      .mConnectionErrorCallback = OnError});
 
   sf::RenderWindow window(sf::VideoMode(1280, 800), "H4ckerSp4ce t3AM");
   window.setFramerateLimit(60);

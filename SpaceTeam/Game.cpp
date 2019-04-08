@@ -6,41 +6,60 @@
 
 using st::Game;
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-st::InputVariant GetInput(const boost::property_tree::ptree& Tree)
+namespace
 {
-  const auto Type = Tree.get<std::string>("Type");
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  size_t GetRandomInputIndex(size_t Size)
+  {
+    static std::random_device RandomDevice;
 
-  if (Type == std::string("Analog"))
-  {
-    return st::Analog(Tree);
-  }
-  else if (Type == std::string("Digital"))
-  {
-    return st::Digital(Tree);
-  }
-  else if (Type == std::string("Momentary"))
-  {
-    return st::Momentary(Tree);
+    static std::mt19937 Generator(RandomDevice());
+
+    std::uniform_int_distribution<> Distribution(0, Size - 1);
+
+    return Distribution(Generator);
   }
 
-  throw std::logic_error("unreachable");
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  st::InputVariant GetInput(const boost::property_tree::ptree& Tree)
+  {
+    const auto Type = Tree.get<std::string>("Type");
+
+    if (Type == std::string("Analog"))
+    {
+      return st::Analog(Tree);
+    }
+    else if (Type == std::string("Digital"))
+    {
+      return st::Digital(Tree);
+    }
+    else if (Type == std::string("Momentary"))
+    {
+      return st::Momentary(Tree);
+    }
+
+    throw std::logic_error("unreachable");
+  }
+
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  std::vector<st::InputVariant> GetInputs(boost::property_tree::ptree& Tree)
+  {
+    std::vector<st::InputVariant> Inputs;
+
+    for (const auto& [Label, SubTree]: Tree)
+    {
+      Inputs.emplace_back(GetInput(SubTree));
+    }
+
+    return Inputs;
+  }
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-std::vector<st::InputVariant> GetInputs(boost::property_tree::ptree& Tree)
-{
-  std::vector<st::InputVariant> Inputs;
-
-  for (const auto& [Label, SubTree]: Tree)
-  {
-    Inputs.emplace_back(GetInput(SubTree));
-  }
-
-  return Inputs;
-}
+int Game::mCurrentScore = 100;
+int Game::mCurrentRound = 100;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -53,13 +72,46 @@ Game::Game(boost::property_tree::ptree& Tree)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+size_t Game::GetRoundInputsSize() const
+{
+  return 2;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void Game::GetNextRoundInputs()
+{
+  mCurrentRoundInputs.clear();
+
+  while (mCurrentRoundInputs.size() < GetRoundInputsSize())
+  {
+    auto& InputVariant = mInputs[GetRandomInputIndex(mInputs.size())];
+
+    auto GetId = [] (auto& InputVariant) {return std::visit([] (auto& Input) { return Input.GetId(); }, InputVariant);};
+
+    if (
+      std::find_if(
+        mCurrentRoundInputs.begin(),
+        mCurrentRoundInputs.end(),
+        [Id = GetId(InputVariant), &InputVariant, &GetId] (const auto& Input)
+        {
+          return Id == GetId(Input.get());
+        }) == mCurrentRoundInputs.end())
+    {
+      mCurrentRoundInputs.emplace_back(InputVariant);
+    }
+  }
+
+  mCurrentScore = 100;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string Game::GetNextInputDisplay()
 {
-  static std::random_device RandomDevice;
-  static std::mt19937 Generator(RandomDevice());
-  std::uniform_int_distribution<> Distribution(0, mInputs.size() - 1);;
-
-  moCurrentActiveVariant = mInputs[Distribution(Generator)];
+  moCurrentActiveVariant = *std::next(
+    mCurrentRoundInputs.begin(),
+    GetRandomInputIndex(mCurrentRoundInputs.size()));
 
   mLastResetTime = std::chrono::system_clock::now();
 
@@ -102,11 +154,11 @@ st::Success Game::GetSuccess()
 {
   st::Success Success;
 
-  for(auto& InputVariant : mInputs)
+  for(auto& InputVariant : mCurrentRoundInputs)
   {
     std::visit(
       [&Success] (auto& Input) { return Input.IsCorrect(Success); },
-      InputVariant);
+      InputVariant.get());
   }
 
   return Success;
@@ -117,4 +169,48 @@ st::Success Game::GetSuccess()
 std::chrono::time_point<std::chrono::system_clock> Game::GetLastResetTime() const
 {
   return mLastResetTime;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void Game::Success(bool Success)
+{
+  if (Success)
+  {
+    mCurrentScore += 10;
+  }
+  else
+  {
+    mCurrentScore -= 49;
+  }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+int Game::GetCurrentScore() const
+{
+  return mCurrentScore;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void Game::SetCurrentScore(int Score)
+{
+  mCurrentScore = Score;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+int Game::GetCurrentRound() const
+{
+  return mCurrentRound;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void Game::SetCurrentRound(int Round)
+{
+  mCurrentRound = Round;
+
+  GetNextRoundInputs();
 }

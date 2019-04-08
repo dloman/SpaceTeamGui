@@ -14,10 +14,10 @@ namespace st
 
       Input(const boost::property_tree::ptree& Tree);
 
-      bool mIsActive;
-
       const unsigned mId;
 
       const std::string mLabel;
+
+      bool mIsActive;
   };
 }

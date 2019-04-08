@@ -2,12 +2,70 @@
 #include <SpaceTeam/Success.hpp>
 #include <Tcp/Server.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <fmt/format.h>
 #include <mutex>
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void SendGameOver(st::Game& Game, std::shared_ptr<dl::tcp::Session>& pSession)
+template <typename T>
+void SendGameOver(T& Games)
 {
+  for (auto& [Game, pSession] : Games)
+  {
+    boost::property_tree::ptree Tree;
+
+    Tree.put(
+      "reset",
+      "Game Over. You crashed and died a horrible painful space death. Good try though!");
+
+    Tree.put("wait", true);
+
+    std::stringstream Stream;
+
+    boost::property_tree::write_json(Stream, Tree);
+
+    boost::property_tree::write_json(std::cout, Tree);
+
+    Game.SetCurrentRound(1);
+
+    pSession->Write(Stream.str());
+  }
+
+  std::this_thread::sleep_for(std::chrono::seconds(30));
+
+  std::terminate();
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+template <typename T>
+void SendNewRound(T& Games)
+{
+  for (auto& [Game, pSession] : Games)
+  {
+    boost::property_tree::ptree Tree;
+
+    const auto LastRound = Game.GetCurrentRound();
+
+    Game.SetCurrentRound(LastRound + 1);
+
+    Tree.put(
+      "reset",
+      fmt::format(
+        "Round {} Completed. Good job so far, don't screw it up. You're almost there. Get Ready for Round {}!\n",
+        LastRound,
+        Game.GetCurrentRound()));
+
+    Tree.put("wait", true);
+
+    std::stringstream Stream;
+
+    boost::property_tree::write_json(Stream, Tree);
+
+    boost::property_tree::write_json(std::cout, Tree);
+
+    pSession->Write(Stream.str());
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -36,8 +94,6 @@ void UpdateGameState(std::string_view Bytes)
 //------------------------------------------------------------------------------
 int main()
 {
-  int CurrentScore = 100;
-
   std::mutex Mutex;
 
   std::vector<std::pair<st::Game, std::shared_ptr<dl::tcp::Session>>> Games;
@@ -62,6 +118,10 @@ int main()
           {
             UpdateGameState(Bytes);
           });
+
+        auto& [Game, pTemp] = Games.back();
+
+        Game.SetCurrentRound(1);
       }});
 
   while(true)
@@ -78,21 +138,30 @@ int main()
       {
         SendReset(Game, pSession);
 
-        CurrentScore += 10;
+        Game.Success(true);
       }
 
+      if (Success.mInactiveFailCount > 0)
       {
-        CurrentScore -= 4;
+        Game.Success(false);
       }
 
       if (std::chrono::system_clock::now() - Game.GetLastResetTime() > std::chrono::seconds(20))
       {
         SendReset(Game, pSession);
+
+        Game.Success(false);
       }
+
+      const auto CurrentScore = Game.GetCurrentScore();
 
       if (CurrentScore <= 0)
       {
-        SendGameOver(Game, pSession);
+        SendGameOver(Games);
+      }
+      else if (CurrentScore >= 150)
+      {
+        SendNewRound(Games);
       }
     }
   }
