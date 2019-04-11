@@ -299,10 +299,20 @@ void OnError(const std::string& Error)
 }
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-int main()
+int main(int argc, char** argv)
 {
+  const auto Hostname = [&]
+    {
+      if(argc == 2)
+      {
+        return std::string(argv[1]);
+      }
+      return std::string("localhost");
+    }();
+
   gpClient = std::make_unique<dl::tcp::Client<dl::tcp::Session>>(
     dl::tcp::ClientSettings<dl::tcp::Session>{
+      .mHostname = Hostname,
       .mOnRxCallback = OnRx,
       .mConnectionCallback = [] (const auto&) { fmt::print("connected\n");},
       .mConnectionErrorCallback = OnError});
@@ -310,6 +320,8 @@ int main()
   sf::RenderWindow window(sf::VideoMode(640, 480), "H4ckerSp4ce t3AM", sf::Style::Fullscreen);
   window.setFramerateLimit(30);
   ImGui::SFML::Init(window);
+
+  window.setMouseCursorVisible(false);
 
   ImGuiIO& io = ImGui::GetIO();
   io.Fonts->AddFontDefault();
