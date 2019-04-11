@@ -52,11 +52,10 @@ float GetRandomTemp()
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-std::array<float, 11> GetRandomHorizontalData()
+std::array<float, 9> GetRandomHorizontalData()
 {
-  return {
-    GetRandomTemp(),
-    GetRandomTemp(),
+  return
+  {
     GetRandomTemp(),
     GetRandomTemp(),
     GetRandomTemp(),
@@ -96,7 +95,7 @@ auto gTextUpdate = std::chrono::system_clock::now();
 ImFont* gpFont20;
 ImFont* gpFont30;
 
-static const ImVec2 PlotSize = {440, 145};
+static const ImVec2 PlotSize = {265, 73};
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -109,7 +108,7 @@ void DrawDataPanel()
     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
   ImGui::SetWindowPos({0, 0});
-  ImGui::SetWindowSize({455, 800});
+  ImGui::SetWindowSize({280, 480});
   ImGui::Button("Flux Endonglanator", {-1,0});
 
   if (std::chrono::system_clock::now() - gFastUpdate > 1s)
@@ -138,8 +137,6 @@ void DrawDataPanel()
   ImGui::PlotHistogram("", gHistogram1Data.data(), gHistogram1Data.size(), 0, NULL, 0.0f, 1.0f, PlotSize);
   ImGui::ProgressBar(gCoreTemp, {-1,0},"Core °C");
 
-  ImGui::ProgressBar(gSystemTemp, {-1,0},"System °C");
-
   ImGui::ProgressBar(gCabinTemp, {-1,0},"Cabin °C");
 
   ImGui::ProgressBar(gToiletSeatTemp, {-1,0},"Toilet Seat °C");
@@ -149,7 +146,7 @@ void DrawDataPanel()
   ImGui::SameLine();
   ImGui::Checkbox("Self Destruct Engaged", &gSelfDestruct);
   ImGui::SameLine();
-  ImGui::RadioButton("Recyle Bin Full", gRecycleBin);
+  ImGui::RadioButton("Recycle Bin Full", gRecycleBin);
 
   ImGui::PlotLines("", gLine1Data.data(), gLine1Data.size(), 0, NULL, 0.0f, 1.0f, PlotSize);
   ImGui::PlotHistogram("", gHistogram2Data.data(), gHistogram2Data.size(), 0, NULL, 0.0f, 1.0f, PlotSize);
@@ -178,14 +175,14 @@ void DrawTaskPanel()
     1.0f,
     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
-  ImGui::SetWindowSize({820, 500});
+  ImGui::SetWindowSize({358, 240});
 
-  ImGui::SetWindowPos({460, 0});
+  ImGui::SetWindowPos({282, 0});
 
   // Load Fonts
   ImGui::PushFont(gpFont20);
 
-  ImGui::Button("Comply with the following instructions to avoid irreversible death:");
+  ImGui::Button("Comply with instructions \nto avoid irreversible death:");
 
   ImGui::Text("\n");
   ImGui::PopFont();
@@ -237,8 +234,9 @@ void DrawGraphPanel()
     1.0f,
     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
-  ImGui::SetWindowPos({460, 505});
-  ImGui::SetWindowSize({820, 290});
+  ImGui::SetWindowSize({358, 250});
+
+  ImGui::SetWindowPos({282, 242});
 
   if (std::chrono::system_clock::now() - gHorizontalUpdate > 1s)
   {
@@ -313,7 +311,7 @@ int main()
       .mConnectionCallback = [] (const auto&) { fmt::print("connected\n");},
       .mConnectionErrorCallback = OnError});
 
-  sf::RenderWindow window(sf::VideoMode(1280, 800), "H4ckerSp4ce t3AM");
+  sf::RenderWindow window(sf::VideoMode(640, 480), "H4ckerSp4ce t3AM");
   window.setFramerateLimit(60);
   ImGui::SFML::Init(window);
 
