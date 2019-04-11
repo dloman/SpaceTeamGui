@@ -83,7 +83,7 @@ void Game::GetNextRoundInputs()
 {
   mCurrentRoundInputs.clear();
 
-  while (mCurrentRoundInputs.size() < GetRoundInputsSize())
+  while (mCurrentRoundInputs.size() <= GetRoundInputsSize())
   {
     auto& InputVariant = mInputs[GetRandomInputIndex(mInputs.size())];
 

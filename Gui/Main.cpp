@@ -82,7 +82,6 @@ auto gCoreTemp = GetRandomTemp();
 auto gSystemTemp = GetRandomTemp();
 auto gCabinTemp = GetRandomTemp();
 auto gToiletSeatTemp = GetRandomTemp();
-auto gDingler = GetRandomTemp() > .5f;
 auto gSelfDestruct = GetRandomTemp() > .5f;
 auto gRecycleBin = GetRandomTemp() > .5f;
 
@@ -92,6 +91,7 @@ auto gHorizontalUpdate = std::chrono::system_clock::now();
 std::string gTextToDisplay("");
 std::string gCurrentText("");
 auto gTextUpdate = std::chrono::system_clock::now();
+ImFont* gpFont15;
 ImFont* gpFont20;
 ImFont* gpFont30;
 
@@ -118,7 +118,6 @@ void DrawDataPanel()
     gLine3Data = GetData();
     gHistogram1Data = GetData();
     gHistogram2Data = GetData();
-    gDingler = GetRandomTemp() > .5f;
     gSelfDestruct = GetRandomTemp() > .5f;
     gRecycleBin = GetRandomTemp() > .5f;
     gFastUpdate = std::chrono::system_clock::now();
@@ -142,9 +141,7 @@ void DrawDataPanel()
   ImGui::ProgressBar(gToiletSeatTemp, {-1,0},"Toilet Seat °C");
 
   ImGui::Button("Chooch Inverters", {-1,0});
-  ImGui::RadioButton("Dingler Enabled", gDingler);
-  ImGui::SameLine();
-  ImGui::Checkbox("Self Destruct Engaged", &gSelfDestruct);
+  ImGui::Checkbox("Self Destruct", &gSelfDestruct);
   ImGui::SameLine();
   ImGui::RadioButton("Recycle Bin Full", gRecycleBin);
 
@@ -180,14 +177,15 @@ void DrawTaskPanel()
   ImGui::SetWindowPos({282, 0});
 
   // Load Fonts
-  ImGui::PushFont(gpFont20);
+  ImGui::PushFont(gpFont15);
 
-  ImGui::Button("Comply with instructions \nto avoid irreversible death:");
+  ImGui::Button("Comply with instructions to avoid death:");
 
-  ImGui::Text("\n");
   ImGui::PopFont();
 
-  ImGui::PushFont(gpFont30);
+  ImGui::Text("\n");
+
+  ImGui::PushFont(gpFont20);
 
   if (gCurrentText.size() != gTextToDisplay.size())
   {
@@ -207,7 +205,7 @@ void DrawTaskPanel()
     float Progress = duration_cast<seconds>(
       system_clock::now() - gTextUpdate).count() / 20.0;
 
-    ImGui::SetCursorPos({0, 460});
+    ImGui::SetCursorPos({0, 200});
 
     ImGui::PushFont(gpFont30);
 
@@ -318,6 +316,7 @@ int main()
   ImGuiIO& io = ImGui::GetIO();
   io.Fonts->AddFontDefault();
 
+  gpFont15 = io.Fonts->AddFontFromFileTTF("/home/dloman/ProggyClean.ttf", 15.f);
   gpFont20 = io.Fonts->AddFontFromFileTTF("/home/dloman/ProggyClean.ttf", 20.f);
   gpFont30 = io.Fonts->AddFontFromFileTTF("/home/dloman/ProggyClean.ttf", 30.f);
 
