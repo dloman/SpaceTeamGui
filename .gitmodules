@@ -7,3 +7,9 @@
 [submodule "Modules/fmt"]
 	path = Modules/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "DanLib"]
+	path = Modules/DanLib
+	url = https://github.com/dloman/DanLib.git
+[submodule "Modules/asio"]
+	path = Modules/asio
+	url = https://github.com/chriskohlhoff/asio.git

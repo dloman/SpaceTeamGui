@@ -6,8 +6,6 @@
 #include <Utility/Random.hpp>
 
 #include <Tcp/Client.hpp>
-#include <Robot/PacketEncoder.hpp>
-#include <Robot/PacketDecoder.hpp>
 
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
@@ -309,16 +307,16 @@ int main()
       .mConnectionCallback = [] (const auto&) { fmt::print("connected\n");},
       .mConnectionErrorCallback = OnError});
 
-  sf::RenderWindow window(sf::VideoMode(640, 480), "H4ckerSp4ce t3AM");
-  window.setFramerateLimit(60);
+  sf::RenderWindow window(sf::VideoMode(640, 480), "H4ckerSp4ce t3AM", sf::Style::Fullscreen);
+  window.setFramerateLimit(30);
   ImGui::SFML::Init(window);
 
   ImGuiIO& io = ImGui::GetIO();
   io.Fonts->AddFontDefault();
 
-  gpFont15 = io.Fonts->AddFontFromFileTTF("/home/dloman/ProggyClean.ttf", 15.f);
-  gpFont20 = io.Fonts->AddFontFromFileTTF("/home/dloman/ProggyClean.ttf", 20.f);
-  gpFont30 = io.Fonts->AddFontFromFileTTF("/home/dloman/ProggyClean.ttf", 30.f);
+  gpFont15 = io.Fonts->AddFontFromFileTTF("/home/pi/ProggyClean.ttf", 15.f);
+  gpFont20 = io.Fonts->AddFontFromFileTTF("/home/pi/ProggyClean.ttf", 20.f);
+  gpFont30 = io.Fonts->AddFontFromFileTTF("/home/pi/ProggyClean.ttf", 30.f);
 
   ImGui::SFML::UpdateFontTexture();
 
