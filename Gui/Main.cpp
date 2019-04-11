@@ -80,8 +80,13 @@ auto gCoreTemp = GetRandomTemp();
 auto gSystemTemp = GetRandomTemp();
 auto gCabinTemp = GetRandomTemp();
 auto gToiletSeatTemp = GetRandomTemp();
+auto gWindowsUpdate = GetRandomTemp();
 auto gSelfDestruct = GetRandomTemp() > .5f;
 auto gRecycleBin = GetRandomTemp() > .5f;
+auto gRee = GetRandomTemp() > .5f;
+auto gHogs = GetRandomTemp() > .5f;
+auto gRent = GetRandomTemp() > .5f;
+auto gNurgle = GetRandomTemp() > .5f;
 
 auto gHorizontalData = GetRandomHorizontalData();
 auto gHorizontalUpdate = std::chrono::system_clock::now();
@@ -93,7 +98,7 @@ ImFont* gpFont15;
 ImFont* gpFont20;
 ImFont* gpFont30;
 
-static const ImVec2 PlotSize = {265, 73};
+static const ImVec2 PlotSize = {263, 69};
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -118,6 +123,10 @@ void DrawDataPanel()
     gHistogram2Data = GetData();
     gSelfDestruct = GetRandomTemp() > .5f;
     gRecycleBin = GetRandomTemp() > .5f;
+    gRee = GetRandomTemp() > .5f;
+    gHogs = GetRandomTemp() > .5f;
+    gRent = GetRandomTemp() > .5f;
+    gNurgle = GetRandomTemp() > .5f;
     gFastUpdate = std::chrono::system_clock::now();
   }
 
@@ -127,6 +136,7 @@ void DrawDataPanel()
     gCabinTemp = GetRandomTemp();
     gSystemTemp = GetRandomTemp();
     gToiletSeatTemp = GetRandomTemp();
+    gWindowsUpdate = GetRandomTemp();
 
     gSlowUpdate = std::chrono::system_clock::now();
   }
@@ -137,15 +147,26 @@ void DrawDataPanel()
   ImGui::ProgressBar(gCabinTemp, {-1,0},"Cabin °C");
 
   ImGui::ProgressBar(gToiletSeatTemp, {-1,0},"Toilet Seat °C");
+  ImGui::ProgressBar(gWindowsUpdate, {-1,0},"Windows Update %");
 
   ImGui::Button("Chooch Inverters", {-1,0});
+
   ImGui::Checkbox("Self Destruct", &gSelfDestruct);
   ImGui::SameLine();
-  ImGui::RadioButton("Recycle Bin Full", gRecycleBin);
+  ImGui::RadioButton("Trash Bin Full", gRecycleBin);
+
+  ImGui::RadioButton("Reeeeeee!!", gRee);
+  ImGui::SameLine();
+  ImGui::Checkbox("Square Hogs Loaded", &gHogs);
+
+  ImGui::Checkbox("Rent to Damn High",&gRent);
+  ImGui::SameLine();
+  ImGui::RadioButton("Churg Nurg", gNurgle);
+
+  ImGui::Button("Warning: Yak Shaving Required", {-1,0});
 
   ImGui::PlotLines("", gLine1Data.data(), gLine1Data.size(), 0, NULL, 0.0f, 1.0f, PlotSize);
   ImGui::PlotHistogram("", gHistogram2Data.data(), gHistogram2Data.size(), 0, NULL, 0.0f, 1.0f, PlotSize);
-  ImGui::PlotLines("", gLine2Data.data(), gLine2Data.size(), 0, NULL, 0.0f, 1.0f, PlotSize);
 
   ImGui::End();
 }
