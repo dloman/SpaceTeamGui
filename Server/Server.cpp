@@ -120,6 +120,8 @@ int main()
     .mOnNewSessionCallback =
       [&] (std::shared_ptr<dl::tcp::Session> pSession)
       {
+        fmt::print("New Connection!!\n");
+
         std::lock_guard Lock(Mutex);
 
         Panels.emplace_back(std::make_unique<st::Panel>(Updates, Tree, pSession));
@@ -150,6 +152,7 @@ int main()
         SendReset(Game, pSession);
 
         Game.Success(true);
+        fmt::print("W000t\n");
       }
 
       if (Success.mInactiveFailCount > 0)

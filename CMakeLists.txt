@@ -63,7 +63,7 @@ endif()
 find_library(WIRING_PI wiringPi)
 
 if(WIRING_PI)
-  LIST(APPEND WIRING_PI_LIBRARIES ${WIRING_PI})
+  list(APPEND WIRING_PI_LIBRARIES ${WIRING_PI})
 endif()
 
 find_package(Threads)
@@ -113,9 +113,15 @@ target_link_libraries(
   fmt::fmt
   )
 
+if(BUILD_RPI)
+  list(APPEND I2C_SOURCE HardwareInterface/I2c.cpp)
+else()
+  list(APPEND I2C_SOURCE HardwareInterface/MockI2c.cpp)
+endif()
+
 add_library(
   SpaceTeamHardware
-  HardwareInterface/I2c.cpp
+  ${I2C_SOURCE}
   )
 
 target_link_libraries(

@@ -26,8 +26,6 @@ uint64_t GetSerialNumber()
     {
       Stream >> Word; // :
 
-      Stream >> Word; // Serial #
-
       Stream >> std::hex >> SerialNumber;
     }
   }

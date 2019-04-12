@@ -22,7 +22,7 @@ namespace
 //-----------------------------------------------------------------------------
 Input::Input(const boost::property_tree::ptree& Tree)
 : mPiSerial(GetSerial(Tree.get<std::string>("PiSerial"))),
-  mId(Tree.get<unsigned>("Id")),
+  mId(Tree.get<unsigned>("Id") - 1),
   mLabel(Tree.get<std::string>("Label")),
   mIsActive(false)
 {

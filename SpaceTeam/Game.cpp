@@ -75,7 +75,7 @@ Game::Game(boost::property_tree::ptree& Tree)
 //------------------------------------------------------------------------------
 size_t Game::GetRoundInputsSize() const
 {
-  return 2;
+  return 1;
 }
 
 //------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ void Game::GetNextRoundInputs()
 {
   mCurrentRoundInputs.clear();
 
-  while (mCurrentRoundInputs.size() <= GetRoundInputsSize())
+  while (mCurrentRoundInputs.size() < GetRoundInputsSize())
   {
     auto& InputVariant = mInputs[GetRandomInputIndex(mInputs.size())];
 

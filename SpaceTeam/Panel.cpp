@@ -50,7 +50,7 @@ Panel::Panel(
 
         std::memcpy(&Data, Bytes.data() + 9, 8);
 
-        std::bitset<8> Bits(Data);
+        std::bitset<64> Bits(Data);
 
         for (unsigned i = 0; i < 40; ++i)
         {
