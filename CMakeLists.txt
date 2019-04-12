@@ -118,7 +118,6 @@ if(BUILD_RPI)
   list(APPEND HARDWARE_SOURCE HardwareInterface/Spi.cpp)
 else()
   list(APPEND HARDWARE_SOURCE HardwareInterface/MockI2c.cpp)
-  list(APPEND HARDWARE_SOURCE HardwareInterface/MockSpi.cpp)
 endif()
 
 add_library(
