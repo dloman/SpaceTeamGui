@@ -7,6 +7,8 @@
 #include <fmt/format.h>
 #include <mutex>
 
+std::chrono::time_point<std::chrono::system_clock> gGpioToggle(std::chrono::seconds(0));
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 void SendGameOver(std::vector<std::unique_ptr<st::Panel>>& Panels)
@@ -69,6 +71,7 @@ void SendNewRound(std::vector<std::unique_ptr<st::Panel>>& Panels)
 }
 
 //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void SendReset(st::Game& Game, std::shared_ptr<dl::tcp::Session>& pSession)
 {
   boost::property_tree::ptree Tree;
@@ -82,6 +85,53 @@ void SendReset(st::Game& Game, std::shared_ptr<dl::tcp::Session>& pSession)
   boost::property_tree::write_json(std::cout, Tree);
 
   pSession->Write(Stream.str());
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void SendGpioDirection(st::Game& Game, std::shared_ptr<dl::tcp::Session>& pSession)
+{
+  for (const auto Serial : Game.GetPiSerials())
+  {
+    boost::property_tree::ptree Tree;
+
+    Tree.put("gpioDirection", Game.GetHardwareDirection(Serial));
+
+    Tree.put("PiSerial", Serial);
+
+    std::stringstream Stream;
+
+    boost::property_tree::write_json(Stream, Tree);
+
+    boost::property_tree::write_json(std::cout, Tree);
+
+    pSession->Write(Stream.str());
+  }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void SendGpioValue(std::vector<std::unique_ptr<st::Panel>>& Panels)
+{
+  for (auto& pPanel : Panels)
+  {
+    for (const auto Serial : pPanel->mGame.GetPiSerials())
+    {
+      boost::property_tree::ptree Tree;
+
+      Tree.put("gpioValue", pPanel->mGame.GetHardwareValue(Serial));
+
+      Tree.put("PiSerial", Serial);
+
+      std::stringstream Stream;
+
+      boost::property_tree::write_json(Stream, Tree);
+
+      boost::property_tree::write_json(std::cout, Tree);
+
+      pPanel->mpSession->Write(Stream.str());
+    }
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -129,6 +179,8 @@ int main()
         auto& Panel = *(Panels.back());
 
         Panel.mGame.SetCurrentRound(1);
+
+        SendGpioDirection(Panel.mGame, pSession);
       }});
 
   while(true)
@@ -187,5 +239,18 @@ int main()
           return !pPanel->GetIsConnected();
         }),
       Panels.end());
+
+
+    if (std::chrono::system_clock::now()- gGpioToggle > std::chrono::seconds(1))
+    {
+      for (auto& pPanel : Panels)
+      {
+        pPanel->mGame.UpdateOutputs();
+      }
+
+      gGpioToggle = std::chrono::system_clock::now();
+
+    }
+    SendGpioValue(Panels);
   }
 }

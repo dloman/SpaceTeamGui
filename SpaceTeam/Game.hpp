@@ -2,6 +2,7 @@
 #include <SpaceTeam/Analog.hpp>
 #include <SpaceTeam/Digital.hpp>
 #include <SpaceTeam/Momentary.hpp>
+#include <SpaceTeam/Output.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <variant>
 #include <vector>
@@ -40,6 +41,14 @@ namespace st
 
       void GetNextRoundInputs();
 
+      uint64_t GetHardwareDirection(uint64_t PiSerial) const;
+
+      uint64_t GetHardwareValue(uint64_t PiSerial) const;
+
+      const std::unordered_set<uint64_t>& GetPiSerials() const;
+
+      void UpdateOutputs();
+
     private:
 
       size_t GetRoundInputsSize() const;
@@ -49,6 +58,10 @@ namespace st
       std::vector<st::InputVariant> mInputs;
 
       std::optional<std::reference_wrapper<InputVariant>> moCurrentActiveVariant;
+
+      std::vector<st::Output> mOutputs;
+
+      const std::unordered_set<uint64_t> mPiSerials;
 
       std::vector<std::reference_wrapper<InputVariant>> mCurrentRoundInputs;
 

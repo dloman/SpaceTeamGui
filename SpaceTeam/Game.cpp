@@ -11,6 +11,21 @@ namespace
 {
   //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
+  uint64_t GetSerial(const std::string& SerialString)
+  {
+    uint64_t Serial;
+
+    std::stringstream Stream;
+
+    Stream << std::hex << SerialString;
+
+    Stream >> Serial;
+
+    return Serial;
+  }
+
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
   size_t GetRandomInputIndex(size_t Size)
   {
     static std::random_device RandomDevice;
@@ -46,16 +61,62 @@ namespace
 
   //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
+  st::Output GetOutput(const boost::property_tree::ptree& Tree)
+  {
+    return st::Output{
+      .mPiSerial = GetSerial(Tree.get<std::string>("PiSerial")),
+      .mId = Tree.get<unsigned>("Id") - 1,
+      .mCurrentState = false};
+  }
+
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
   std::vector<st::InputVariant> GetInputs(boost::property_tree::ptree& Tree)
   {
     std::vector<st::InputVariant> Inputs;
 
     for (const auto& [Label, SubTree]: Tree)
     {
-      Inputs.emplace_back(GetInput(SubTree));
+      if (Label == std::string("Input"))
+      {
+        Inputs.emplace_back(GetInput(SubTree));
+      }
     }
 
     return Inputs;
+  }
+
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  std::vector<st::Output> GetOutputs(boost::property_tree::ptree& Tree)
+  {
+    std::vector<st::Output> Inputs;
+
+    for (const auto& [Label, SubTree]: Tree)
+    {
+      if (Label == std::string("Output"))
+      {
+        Inputs.emplace_back(GetOutput(SubTree));
+      }
+    }
+
+    return Inputs;
+  }
+
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  std::unordered_set<uint64_t> GetSerials(boost::property_tree::ptree& Tree)
+  {
+    std::unordered_set<uint64_t> Serials;
+
+    for (const auto& [Label, SubTree]: Tree)
+    {
+       Serials.insert(GetSerial(SubTree.get<std::string>("PiSerial")));
+
+       (void)Label;
+    }
+
+    return Serials;
   }
 }
 
@@ -67,6 +128,8 @@ int Game::mCurrentRound = 100;
 Game::Game(boost::property_tree::ptree& Tree)
 : mInputs(GetInputs(Tree)),
   moCurrentActiveVariant(std::nullopt),
+  mOutputs(GetOutputs(Tree)),
+  mPiSerials(GetSerials(Tree)),
   mLastResetTime(std::chrono::milliseconds(0))
 {
 }
@@ -205,4 +268,55 @@ void Game::SetCurrentRound(int Round)
   mCurrentRound = Round;
 
   GetNextRoundInputs();
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+uint64_t Game::GetHardwareDirection(uint64_t PiSerial) const
+{
+  std::bitset<64> Bits(0);
+
+  for (const auto& Output : mOutputs)
+  {
+    if (Output.mPiSerial == PiSerial)
+    {
+      Bits[Output.mId] = true;
+    }
+  }
+
+  return Bits.to_ulong();
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+uint64_t Game::GetHardwareValue(uint64_t PiSerial) const
+{
+  std::bitset<64> Bits(0);
+
+  for (const auto& Output : mOutputs)
+  {
+    if (Output.mPiSerial == PiSerial)
+    {
+      Bits[Output.mId] = Output.mCurrentState;
+    }
+  }
+
+  return Bits.to_ulong();
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+const std::unordered_set<uint64_t>& Game::GetPiSerials() const
+{
+  return mPiSerials;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void Game::UpdateOutputs()
+{
+  for (auto& Output : mOutputs)
+  {
+    Output.mCurrentState = !Output.mCurrentState;
+  }
 }

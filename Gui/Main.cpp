@@ -314,6 +314,7 @@ std::string GetState()
   return State;
 }
 
+#include <bitset>
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 void OnRx(const std::string& Bytes)
@@ -334,6 +335,33 @@ void OnRx(const std::string& Bytes)
 
       return;
     }
+  }
+  else if (const auto oValue = Tree.get_optional<uint64_t>("gpioValue"))
+  {
+    if (const auto oSerial = Tree.get_optional<uint64_t>("PiSerial"))
+    {
+      if (gSerialNumber == *oSerial)
+      {
+        st::hw::setGPIOVal(*oValue);
+
+        fmt::print("value = {}", std::bitset<64>(*oValue).to_string());
+      }
+    }
+    return;
+  }
+  else if (const auto oDirection = Tree.get_optional<uint64_t>("gpioDirection"))
+  {
+    if (const auto oSerial = Tree.get_optional<uint64_t>("PiSerial"))
+    {
+      if (gSerialNumber == *oSerial)
+      {
+        st::hw::setGPIODir(*oDirection);
+
+        fmt::print("value = {}", std::bitset<64>(*oDirection).to_string());
+      }
+    }
+
+    return;
   }
   gWait = false;
 }
