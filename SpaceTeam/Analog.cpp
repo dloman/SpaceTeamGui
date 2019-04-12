@@ -1,5 +1,6 @@
 #include "Analog.hpp"
 #include <SpaceTeam/Success.hpp>
+#include <SpaceTeam/Update.hpp>
 #include <Utility/Random.hpp>
 #include <fmt/format.h>
 
@@ -140,4 +141,18 @@ double Analog::GetNewValue(const Threshold& CurrentThreshold)
   }
 
   return NewThreshold.mStart;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void Analog::Update(const st::Update& Update)
+{
+  if (
+    Update.mPiSerial != mPiSerial ||
+    Update.mId != mId)
+  {
+    return;
+  }
+
+  //Set State
 }

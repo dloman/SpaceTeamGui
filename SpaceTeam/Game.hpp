@@ -12,6 +12,7 @@ namespace st
   using InputVariant = std::variant<st::Analog, st::Digital, st::Momentary>;
 
   struct Success;
+  class UpdateVec;
 
   class Game
   {
@@ -21,7 +22,7 @@ namespace st
 
       std::string GetNextInputDisplay();
 
-      void UpdateCurrentState();
+      void UpdateCurrentState(st::UpdateVec& Updates);
 
       st::Success GetSuccess();
 

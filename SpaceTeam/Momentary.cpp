@@ -1,5 +1,6 @@
 #include "Momentary.hpp"
 #include <SpaceTeam/Success.hpp>
+#include <SpaceTeam/Update.hpp>
 
 using st::Momentary;
 
@@ -72,4 +73,18 @@ void Momentary::IsCorrect(st::Success& Success)
 void Momentary::SetCurrentState(bool State)
 {
   mCurrentState = State;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void Momentary::Update(const st::Update& Update)
+{
+  if (
+    Update.mPiSerial != mPiSerial ||
+    Update.mId != mId)
+  {
+    return;
+  }
+
+  //Set State
 }

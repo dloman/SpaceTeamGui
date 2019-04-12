@@ -1,5 +1,6 @@
 #include "Digital.hpp"
 #include <SpaceTeam/Success.hpp>
+#include <SpaceTeam/Update.hpp>
 #include <fmt/format.h>
 #include <random>
 
@@ -91,4 +92,18 @@ void Digital::IsCorrect(st::Success& Success)
 void Digital::SetCurrentState(bool State)
 {
   mCurrentState = State;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void Digital::Update(const st::Update& Update)
+{
+  if (
+    Update.mPiSerial != mPiSerial ||
+    Update.mId != mId)
+  {
+    return;
+  }
+
+  //Set State
 }

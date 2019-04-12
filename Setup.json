@@ -2,6 +2,7 @@
   "Input" : {
     "Type" : "Analog",
     "Id" : 0,
+    "PiSerial" : "00000000909428a3",
     "Label" : "Dongle",
     "Threshold" : {
       "Label" : "Dangle",
@@ -17,6 +18,7 @@
   "Input" : {
     "Type" : "Digital",
     "Id" : 1,
+    "PiSerial" : "00000000909428a3",
     "Label" : "Air Supply",
     "On Label" : "Greatest Hits",
     "Off Label" : "Off"
@@ -24,6 +26,7 @@
   "Input" : {
     "Type" : "Momentary",
     "Id" : 2,
+    "PiSerial" : "00000000909428a3",
     "Label" : "",
     "Default Value" : 0,
     "Message" : "Call your Mother"

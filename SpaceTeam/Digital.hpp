@@ -5,6 +5,7 @@
 namespace st
 {
   struct Success;
+  struct Update;
 
   class Digital : public st::Input
   {
@@ -18,7 +19,7 @@ namespace st
 
       void SetCurrentState(bool State);
 
-      void Update();
+      void Update(const st::Update&);
 
     private:
 

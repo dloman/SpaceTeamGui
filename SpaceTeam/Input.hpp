@@ -8,11 +8,15 @@ namespace st
   {
     public:
 
-      unsigned GetId();
+      unsigned GetId() const;
+
+      uint64_t GetPiSerial() const;
 
     protected:
 
       Input(const boost::property_tree::ptree& Tree);
+
+      const uint64_t mPiSerial;
 
       const unsigned mId;
 

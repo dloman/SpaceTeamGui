@@ -1,5 +1,7 @@
 #include <SpaceTeam/Game.hpp>
+#include <SpaceTeam/Panel.hpp>
 #include <SpaceTeam/Success.hpp>
+#include <SpaceTeam/Update.hpp>
 #include <Tcp/Server.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <fmt/format.h>
@@ -7,10 +9,9 @@
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-template <typename T>
-void SendGameOver(T& Games)
+void SendGameOver(std::vector<std::unique_ptr<st::Panel>>& Panels)
 {
-  for (auto& [Game, pSession] : Games)
+  for (auto& pPanel : Panels)
   {
     boost::property_tree::ptree Tree;
 
@@ -26,9 +27,9 @@ void SendGameOver(T& Games)
 
     boost::property_tree::write_json(std::cout, Tree);
 
-    Game.SetCurrentRound(1);
+    pPanel->mGame.SetCurrentRound(1);
 
-    pSession->Write(Stream.str());
+    pPanel->mpSession->Write(Stream.str());
   }
 
   std::this_thread::sleep_for(std::chrono::seconds(30));
@@ -38,23 +39,22 @@ void SendGameOver(T& Games)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-template <typename T>
-void SendNewRound(T& Games)
+void SendNewRound(std::vector<std::unique_ptr<st::Panel>>& Panels)
 {
-  for (auto& [Game, pSession] : Games)
+  for (auto& pPanel : Panels)
   {
     boost::property_tree::ptree Tree;
 
-    const auto LastRound = Game.GetCurrentRound();
+    const auto LastRound = pPanel->mGame.GetCurrentRound();
 
-    Game.SetCurrentRound(LastRound + 1);
+    pPanel->mGame.SetCurrentRound(LastRound + 1);
 
     Tree.put(
       "reset",
       fmt::format(
         "Round {} Completed. Good job so far, don't screw it up. You're almost there. Get Ready for Round {}!\n",
         LastRound,
-        Game.GetCurrentRound()));
+        pPanel->mGame.GetCurrentRound()));
 
     Tree.put("wait", true);
 
@@ -64,7 +64,7 @@ void SendNewRound(T& Games)
 
     boost::property_tree::write_json(std::cout, Tree);
 
-    pSession->Write(Stream.str());
+    pPanel->mpSession->Write(Stream.str());
   }
 }
 
@@ -88,7 +88,16 @@ void SendReset(st::Game& Game, std::shared_ptr<dl::tcp::Session>& pSession)
 //------------------------------------------------------------------------------
 void UpdateGameState(std::string_view Bytes)
 {
+  //loops over all panels and updates each game
 }
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void OnError(const std::string& Error)
+{
+  std::cerr << "Error = " << Error << std::endl;
+}
+
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -96,7 +105,9 @@ int main()
 {
   std::mutex Mutex;
 
-  std::vector<std::pair<st::Game, std::shared_ptr<dl::tcp::Session>>> Games;
+  st::UpdateVec Updates;
+
+  std::vector<std::unique_ptr<st::Panel>> Panels;
 
   boost::property_tree::ptree Tree;
 
@@ -111,17 +122,11 @@ int main()
       {
         std::lock_guard Lock(Mutex);
 
-        Games.emplace_back(std::make_pair(st::Game{Tree}, pSession));
+        Panels.emplace_back(std::make_unique<st::Panel>(Updates, Tree, pSession));
 
-        pSession->GetOnRxSignal().Connect(
-          [] (const auto& Bytes)
-          {
-            UpdateGameState(Bytes);
-          });
+        auto& Panel = *(Panels.back());
 
-        auto& [Game, pTemp] = Games.back();
-
-        Game.SetCurrentRound(1);
+        Panel.mGame.SetCurrentRound(1);
       }});
 
   while(true)
@@ -130,8 +135,12 @@ int main()
 
     std::lock_guard Lock(Mutex);
 
-    for (auto& [Game, pSession] : Games)
+    for (auto& pPanel : Panels)
     {
+      auto& Game = pPanel->mGame;
+
+      auto& pSession = pPanel->mpSession;
+
       const auto Success = Game.GetSuccess();
 
       if (Success.mIsActiveCompleted)
@@ -157,12 +166,23 @@ int main()
 
       if (CurrentScore <= 0)
       {
-        SendGameOver(Games);
+        SendGameOver(Panels);
       }
       else if (CurrentScore >= 150)
       {
-        SendNewRound(Games);
+        SendNewRound(Panels);
       }
     }
+
+    Panels.erase(
+      std::remove_if(
+        Panels.begin(),
+        Panels.end(),
+        [](const auto& pPanel)
+        {
+          return !pPanel->GetIsConnected();
+        }),
+      Panels.end());
+
   }
 }

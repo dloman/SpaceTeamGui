@@ -1,5 +1,6 @@
 #include "Game.hpp"
 #include <SpaceTeam/Success.hpp>
+#include <SpaceTeam/Update.hpp>
 #include <Utility/Visitor.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <random>
@@ -122,30 +123,21 @@ std::string Game::GetNextInputDisplay()
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-double Game::GetCurrentState(const InputVariant& Input)
+void Game::UpdateCurrentState(st::UpdateVec& Updates)
 {
-  return 0.0; //TODO
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-void Game::UpdateCurrentState()
-{
-  for (const auto& Input : mInputs)
+  Updates.ForEach(
+    [this] (const st::Update& Update)
   {
-    auto CurrentState = GetCurrentState(Input);
-
-    return std::visit(st::Visitor{
-      [CurrentState] (st::Analog& Input)
-      {
-        return Input.SetCurrentState(CurrentState);
-      },
-      [CurrentState] (auto& Input)
-      {
-        return Input.SetCurrentState(std::abs(CurrentState - 0.0) > 0.1);
-      }},
-      moCurrentActiveVariant->get());
-  }
+    for (auto& InputVariant : mInputs)
+    {
+      std::visit(
+        [&Update] (auto& Input)
+        {
+          return Input.Update(Update);
+        },
+        InputVariant);
+    }
+  });
 }
 
 //------------------------------------------------------------------------------

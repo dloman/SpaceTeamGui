@@ -5,6 +5,7 @@
 namespace st
 {
   struct Success;
+  struct Update;
 
   struct Threshold
   {
@@ -24,6 +25,8 @@ namespace st
       void IsCorrect(st::Success&);
 
       void SetCurrentState(double State);
+
+      void Update(const st::Update&);
 
     private:
 

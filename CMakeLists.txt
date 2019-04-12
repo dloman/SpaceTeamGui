@@ -6,11 +6,10 @@ cmake_policy( SET CMP0060 NEW )
 project(SpaceTeamGui)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-set(CMAKE_C_COMPILER /usr/local/gcc-8.1.0/bin/gcc-8.1.0)
-set(CMAKE_CXX_COMPILER /usr/local/gcc-8.1.0/bin/g++-8.1.0)
+set(CMAKE_C_COMPILER /usr/local/bin/gcc)
+set(CMAKE_CXX_COMPILER /usr/local/bin/g++)
 
 set(MODULE_NAME SpaceTeamGui)
-add_definitions(-DMODULE_NAME=\"SpaceTeamGui\")
 
 set(OpenGL_LIBRARIES "GL")
 
@@ -36,20 +35,16 @@ find_package(OpenSSL REQUIRED)
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 
+find_package(DanLib REQUIRED)
+
+include_directories(${DanLib_INCLUDE_DIR})
+
 find_package(Threads)
 
 include_directories(Modules/imgui)
 include_directories(Modules/imgui-sfml)
 add_subdirectory(Modules/fmt)
 include_directories(Modules/fmt/include)
-include_directories(Modules/asio/asio/include)
-
-add_subdirectory(Modules/DanLib EXCLUDE_FROM_ALL)
-
-include_directories(Modules/DanLib/Tcp)
-include_directories(Modules/DanLib/Utility)
-include_directories(Modules/DanLib/Robot)
-
 
 include_directories(.)
 
@@ -78,6 +73,8 @@ add_library(
   SpaceTeam/Game.cpp
   SpaceTeam/Input.cpp
   SpaceTeam/Momentary.cpp
+  SpaceTeam/Update.cpp
+  SpaceTeam/Panel.cpp
   )
 
 target_link_libraries(

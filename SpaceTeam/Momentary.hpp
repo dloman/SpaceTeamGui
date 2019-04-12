@@ -6,6 +6,7 @@
 namespace st
 {
   struct Success;
+  struct Update;
 
   class Momentary : public st::Input
   {
@@ -18,6 +19,8 @@ namespace st
       void IsCorrect(st::Success&);
 
       void SetCurrentState(bool State);
+
+      void Update(const st::Update&);
 
     private:
 
