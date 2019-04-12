@@ -3,11 +3,20 @@ cmake_minimum_required(VERSION 3.0)
 #fixes wierd library shortname isssue
 cmake_policy( SET CMP0060 NEW )
 
+add_definitions(-Wno-psabi)
+
 project(SpaceTeamGui)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-set(CMAKE_C_COMPILER /usr/local/bin/gcc)
-set(CMAKE_CXX_COMPILER /usr/local/bin/g++)
+OPTION(BUILD_RPI "Build For Rpi" ON)
+
+if(BUILD_RPI)
+  set(CMAKE_C_COMPILER /usr/local/gcc-8.1.0/bin/gcc-8.1.0)
+  set(CMAKE_CXX_COMPILER /usr/local/gcc-8.1.0/bin/g++-8.1.0)
+else()
+  set(CMAKE_C_COMPILER /usr/local/bin/gcc)
+  set(CMAKE_CXX_COMPILER /usr/local/bin/g++)
+endif()
 
 set(MODULE_NAME SpaceTeamGui)
 
@@ -35,9 +44,21 @@ find_package(OpenSSL REQUIRED)
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-find_package(DanLib REQUIRED)
+if(BUILD_RPI)
 
-include_directories(${DanLib_INCLUDE_DIR})
+  include_directories(Modules/asio/asio/include)
+
+  add_subdirectory(Modules/DanLib EXCLUDE_FROM_ALL)
+
+  include_directories(Modules/DanLib/Tcp)
+  include_directories(Modules/DanLib/Utility)
+  include_directories(Modules/DanLib/Robot)
+else()
+  find_package(DanLib REQUIRED)
+
+  include_directories(${DanLib_INCLUDE_DIR})
+endif()
+
 
 find_library(WIRING_PI wiringPi)
 
@@ -83,8 +104,6 @@ add_library(
   SpaceTeam/Panel.cpp
   )
 
-OPTION(BUILD_RPI "Build For Rpi" OFF)
-
 if(BUILD_RPI)
   add_definitions(-DENABLE_HARDWARE)
 endif()
@@ -125,6 +144,7 @@ add_executable(
 target_link_libraries(
   SpaceTeamGui
   SpaceTeam
+  SpaceTeamHardware
   imgui-sfml
   DanLibTcp
   ${SFML_LIBRARIES}

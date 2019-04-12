@@ -4,6 +4,7 @@
 
 #include <Tcp/Session.hpp>
 #include <fmt/format.h>
+#include <bitset>
 
 using st::Panel;
 

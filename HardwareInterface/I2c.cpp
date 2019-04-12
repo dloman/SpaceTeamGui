@@ -58,17 +58,18 @@
 
 namespace
 {
-	int write8(uint8_t reg, uint8_t val){
-		 int result = wiringPiI2CWriteReg8(GetFileDescriptor(), COMMAND_REG | reg, val);
-		 return result;
-	}
-
   int GetFileDescriptor()
   {
     static int FileDescriptor = wiringPiI2CSetup(0x20);
 
     return FileDescriptor;
   }
+
+	int write8(uint8_t reg, uint8_t val){
+		 int result = wiringPiI2CWriteReg8(GetFileDescriptor(), COMMAND_REG | reg, val);
+		 return result;
+	}
+
 }
 
 namespace st::hw
@@ -85,28 +86,28 @@ int setGPIODir(uint64_t dir)
 
 int setGPIOVal(uint64_t val)
 {
-   int result = write8(GetFileDescriptor(), COMMAND_REG | COMMAND_OP0, (val >> 0) & 0xFF );
-   cout << "MSB: " << hex << (unsigned int)((val >> 0) & 0xFF);
-   result |= write8(GetFileDescriptor(), COMMAND_REG | COMMAND_OP1, (val >> 8) & 0xFF );
-   cout << " " << (unsigned int)((val >> 8) & 0xFF);
-   result |= write8(GetFileDescriptor(), COMMAND_REG | COMMAND_OP2, (val >> 16) & 0xFF );
-   cout << " " << (unsigned int)((val >> 16) & 0xFF);
-   result |= write8(GetFileDescriptor(), COMMAND_REG | COMMAND_OP3, (val >> 24) & 0xFF );
-   cout << " " << (unsigned int)((val >> 24) & 0xFF);
-   result |= write8(GetFileDescriptor(), COMMAND_REG | COMMAND_OP4, (val >> 32) & 0xFF );
-   cout << " " << (unsigned int)((val >> 32) & 0xFF);
-   cout << " LSB" << endl;
+   int result = write8(COMMAND_REG | COMMAND_OP0, (val >> 0) & 0xFF );
+   std::cout << "MSB: " << std::hex << (unsigned int)((val >> 0) & 0xFF);
+   result |= write8(COMMAND_REG | COMMAND_OP1, (val >> 8) & 0xFF );
+   std::cout << " " << (unsigned int)((val >> 8) & 0xFF);
+   result |= write8(COMMAND_REG | COMMAND_OP2, (val >> 16) & 0xFF );
+   std::cout << " " << (unsigned int)((val >> 16) & 0xFF);
+   result |= write8(COMMAND_REG | COMMAND_OP3, (val >> 24) & 0xFF );
+   std::cout << " " << (unsigned int)((val >> 24) & 0xFF);
+   result |= write8(COMMAND_REG | COMMAND_OP4, (val >> 32) & 0xFF );
+   std::cout << " " << (unsigned int)((val >> 32) & 0xFF);
+   std::cout << " LSB" << std::endl;
    return result;
 }
 
 int setAllGPIOInput()
 {
-  setGPIODir(GetFileDescriptor(), DIR_ALL_INPUT);
+  return setGPIODir(DIR_ALL_INPUT);
 }
 
 int setAllGPIOOutput()
 {
-  setGPIODir(GetFileDescriptor(), DIR_ALL_OUTPUT);
+  return setGPIODir(DIR_ALL_OUTPUT);
 }
 
 uint64_t getGPIOVal()
@@ -139,5 +140,6 @@ uint64_t getGPIODir()
    result = wiringPiI2CReadReg8(GetFileDescriptor(), COMMAND_REG | COMMAND_IOC4);
    value |= result << 32;
    return value;
+}
 }
 #endif

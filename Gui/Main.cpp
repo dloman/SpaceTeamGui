@@ -2,6 +2,7 @@
 #include <imgui-SFML.h>
 
 #include <HardwareInterface/Types.hpp>
+#include <HardwareInterface/I2c.h>
 #include <SpaceTeam/Game.hpp>
 #include <SpaceTeam/Success.hpp>
 #include <Utility/Random.hpp>
@@ -115,7 +116,7 @@ void DoHardware()
 
 #ifdef ENABLE_HARDWARE
 
-  const auto Data = getGPIOVal();
+  const auto Data = st::hw::getGPIOVal();
 
 #else
 
