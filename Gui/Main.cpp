@@ -376,9 +376,15 @@ int main(int argc, char** argv)
   ImGuiIO& io = ImGui::GetIO();
   io.Fonts->AddFontDefault();
 
+#ifdef ENABLE_HARDWARE
+  gpFont15 = io.Fonts->AddFontFromFileTTF("/home/pi/ProggyClean.ttf", 15.f);
+  gpFont20 = io.Fonts->AddFontFromFileTTF("/home/pi/ProggyClean.ttf", 20.f);
+  gpFont30 = io.Fonts->AddFontFromFileTTF("/home/pi/ProggyClean.ttf", 30.f);
+#else
   gpFont15 = io.Fonts->AddFontFromFileTTF("/home/dloman/ProggyClean.ttf", 15.f);
   gpFont20 = io.Fonts->AddFontFromFileTTF("/home/dloman/ProggyClean.ttf", 20.f);
   gpFont30 = io.Fonts->AddFontFromFileTTF("/home/dloman/ProggyClean.ttf", 30.f);
+#endif
 
   ImGui::SFML::UpdateFontTexture();
 
