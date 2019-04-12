@@ -39,6 +39,12 @@ find_package(DanLib REQUIRED)
 
 include_directories(${DanLib_INCLUDE_DIR})
 
+find_library(WIRING_PI wiringPi)
+
+if(WIRING_PI)
+  LIST(APPEND WIRING_PI_LIBRARIES ${WIRING_PI})
+endif()
+
 find_package(Threads)
 
 include_directories(Modules/imgui)
@@ -77,10 +83,27 @@ add_library(
   SpaceTeam/Panel.cpp
   )
 
+OPTION(BUILD_RPI "Build For Rpi" OFF)
+
+if(BUILD_RPI)
+  add_definitions(-DENABLE_HARDWARE)
+endif()
+
 target_link_libraries(
   SpaceTeam
   fmt::fmt
   )
+
+add_library(
+  SpaceTeamHardware
+  HardwareInterface/I2c.cpp
+  )
+
+target_link_libraries(
+  SpaceTeamHardware
+  ${WIRING_PI_LIBRARIES}
+  )
+
 
 add_executable(
   SpaceTeamServer

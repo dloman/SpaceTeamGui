@@ -34,6 +34,20 @@ namespace st
         }
       }
 
+
+      template <typename CallbackType>
+      void ForEachAndClear(CallbackType&& Callback)
+      {
+        std::lock_guard Lock(mMutex);
+
+        for (const auto& Update : mUpdates)
+        {
+          Callback(Update);
+        }
+
+        mUpdates.clear();
+      }
+
     private:
 
       std::vector<st::Update> mUpdates;

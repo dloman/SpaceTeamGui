@@ -105,5 +105,5 @@ void Digital::Update(const st::Update& Update)
     return;
   }
 
-  //Set State
+  mCurrentState = static_cast<bool>(Update.mValue);
 }

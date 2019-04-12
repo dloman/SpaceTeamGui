@@ -125,7 +125,7 @@ std::string Game::GetNextInputDisplay()
 //------------------------------------------------------------------------------
 void Game::UpdateCurrentState(st::UpdateVec& Updates)
 {
-  Updates.ForEach(
+  Updates.ForEachAndClear(
     [this] (const st::Update& Update)
   {
     for (auto& InputVariant : mInputs)

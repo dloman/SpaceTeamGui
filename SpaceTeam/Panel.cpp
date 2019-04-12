@@ -1,5 +1,6 @@
 #include "Panel.hpp"
-#include "Update.hpp"
+#include <SpaceTeam/Update.hpp>
+#include <HardwareInterface/Types.hpp>
 
 #include <Tcp/Session.hpp>
 #include <fmt/format.h>
@@ -33,6 +34,31 @@ Panel::Panel(
       std::lock_guard Lock(mMutex);
 
       mIsConnected = false;
+    });
+
+  mpSession->GetOnRxSignal().Connect(
+    [this] (const std::string& Bytes)
+    {
+      if (static_cast<eDeviceID>(Bytes[0]) == eDeviceID::eDigital)
+      {
+        uint64_t Serial;
+
+        std::memcpy(&Serial, Bytes.data() + 1, 8);
+
+        uint64_t Data;
+
+        std::memcpy(&Data, Bytes.data() + 9, 8);
+
+        std::bitset<8> Bits(Data);
+
+        for (unsigned i = 0; i < 40; ++i)
+        {
+          mUpdates.Add(st::Update{
+            .mPiSerial = Serial,
+            .mId = i,
+            .mValue = static_cast<uint8_t>(Bits[i])});
+        }
+      }
     });
 }
 

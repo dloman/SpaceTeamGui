@@ -141,6 +141,8 @@ int main()
 
       auto& pSession = pPanel->mpSession;
 
+      Game.UpdateCurrentState(Updates);
+
       const auto Success = Game.GetSuccess();
 
       if (Success.mIsActiveCompleted)
@@ -183,6 +185,5 @@ int main()
           return !pPanel->GetIsConnected();
         }),
       Panels.end());
-
   }
 }

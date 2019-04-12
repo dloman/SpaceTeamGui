@@ -1,6 +1,7 @@
 #include <imgui.h>
 #include <imgui-SFML.h>
 
+#include <HardwareInterface/Types.hpp>
 #include <SpaceTeam/Game.hpp>
 #include <SpaceTeam/Success.hpp>
 #include <Utility/Random.hpp>
@@ -99,6 +100,32 @@ ImFont* gpFont20;
 ImFont* gpFont30;
 
 static const ImVec2 PlotSize = {263, 69};
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void DoHardware()
+{
+  std::stringstream Stream;
+
+  const uint8_t Digital = 0xFF;
+
+  Stream.write(reinterpret_cast<const char*>(&Digital), 1);
+
+  Stream.write(reinterpret_cast<const char*>(&gSerialNumber), 8);
+
+#ifdef ENABLE_HARDWARE
+
+  const auto Data = getGPIOVal();
+
+#else
+
+  const uint64_t Data = 0xFFFFFFFF;
+
+#endif
+  Stream.write(reinterpret_cast<const char*>(&Data), 8);
+
+  gpClient->Write(Stream.str());
+}
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -380,6 +407,8 @@ int main(int argc, char** argv)
     window.clear();
     ImGui::SFML::Render(window);
     window.display();
+
+    DoHardware();
   }
 
   ImGui::SFML::Shutdown();
