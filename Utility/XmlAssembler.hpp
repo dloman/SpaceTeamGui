@@ -14,6 +14,8 @@ namespace st
 
     private:
 
+      void Check();
+
       dl::Signal<const std::string&> mSignalPacket;
 
       std::string mBytes;

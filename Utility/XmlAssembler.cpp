@@ -8,7 +8,15 @@ void XmlAssembler::Add(const std::string& Bytes)
 {
   mBytes += Bytes;
 
-  while (!mBytes.empty() && Bytes[0] != '{')
+  Check();
+}
+
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void XmlAssembler::Check()
+{
+  while (!mBytes.empty() && mBytes[0] != '{')
   {
     mBytes = mBytes.substr(1);
   }
@@ -37,6 +45,8 @@ void XmlAssembler::Add(const std::string& Bytes)
       mSignalPacket(mBytes.substr(0, Index));
 
       mBytes = mBytes.substr(Index);
+
+      return Check();
     }
   }
 }
