@@ -104,6 +104,11 @@ add_library(
   SpaceTeam/Panel.cpp
   )
 
+add_library(
+  SpaceTeamUtility
+  Utility/XmlAssembler.cpp
+  )
+
 if(BUILD_RPI)
   add_definitions(-DENABLE_HARDWARE)
 endif()
@@ -151,6 +156,7 @@ add_executable(
 target_link_libraries(
   SpaceTeamGui
   SpaceTeam
+  SpaceTeamUtility
   SpaceTeamHardware
   imgui-sfml
   DanLibTcp

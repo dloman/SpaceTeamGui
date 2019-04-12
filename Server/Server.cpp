@@ -103,8 +103,6 @@ void SendGpioDirection(st::Game& Game, std::shared_ptr<dl::tcp::Session>& pSessi
 
     boost::property_tree::write_json(Stream, Tree);
 
-    boost::property_tree::write_json(std::cout, Tree);
-
     pSession->Write(Stream.str());
   }
 }
@@ -126,8 +124,6 @@ void SendGpioValue(std::vector<std::unique_ptr<st::Panel>>& Panels)
       std::stringstream Stream;
 
       boost::property_tree::write_json(Stream, Tree);
-
-      boost::property_tree::write_json(std::cout, Tree);
 
       pPanel->mpSession->Write(Stream.str());
     }

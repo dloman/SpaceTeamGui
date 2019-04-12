@@ -3,9 +3,11 @@
 
 #include <HardwareInterface/Types.hpp>
 #include <HardwareInterface/I2c.h>
+#include <HardwareInterface/Spi.h>
 #include <SpaceTeam/Game.hpp>
 #include <SpaceTeam/Success.hpp>
 #include <Utility/Random.hpp>
+#include <Utility/XmlAssembler.hpp>
 
 #include <Tcp/Client.hpp>
 
@@ -101,6 +103,8 @@ ImFont* gpFont20;
 ImFont* gpFont30;
 
 static const ImVec2 PlotSize = {263, 69};
+
+st::XmlAssembler gXmlPacketAssembler;
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 void DoDigital()
@@ -346,10 +350,9 @@ std::string GetState()
   return State;
 }
 
-#include <bitset>
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void OnRx(const std::string& Bytes)
+void OnXmlPacket(const std::string& Bytes)
 {
   std::istringstream Stream(Bytes);
 
@@ -400,6 +403,13 @@ void OnRx(const std::string& Bytes)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+void OnRx(const std::string& Bytes)
+{
+  gXmlPacketAssembler.Add(Bytes);
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void OnError(const std::string& Error)
 {
   gCurrentText = gTextToDisplay = "H4ckersp4c3 Te4m!1 \n\nAre you ready?";
@@ -410,6 +420,9 @@ void OnError(const std::string& Error)
 //------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
+  //gXmlPacketAssembler.GetSignalPacket().Connect(
+  //[] (const auto& Bytes) { OnXmlPacket(Bytes); });
+
   const auto Hostname = [&]
     {
       if(argc == 2)

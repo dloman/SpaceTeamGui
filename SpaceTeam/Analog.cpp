@@ -6,7 +6,6 @@
 
 namespace
 {
-  constexpr double MaxVoltage = 5.0;
   //---------------------------------------------------------------------------
   //---------------------------------------------------------------------------
   template<typename ContainerType, typename ValueType>
@@ -33,8 +32,8 @@ namespace
       if (Name == std::string("Threshold"))
       {
         Thresholds.emplace_back(st::Threshold{
-          SubTree.get<double>("Start"),
-          SubTree.get<double>("Stop"),
+          SubTree.get<uint8_t>("Start"),
+          SubTree.get<uint8_t>("Stop"),
           SubTree.get<std::string>("Label")});
       }
     }
@@ -108,7 +107,7 @@ void Analog::IsCorrect(st::Success& Success)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-const st::Threshold& Analog::GetThreshold(double Value) const
+const st::Threshold& Analog::GetThreshold(uint8_t Value) const
 {
   const auto iThreshold = FindClosest(mThresholds, Value);
 
@@ -122,20 +121,20 @@ const st::Threshold& Analog::GetThreshold(double Value) const
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void Analog::SetCurrentState(double State)
+void Analog::SetCurrentState(uint8_t State)
 {
   mCurrentState = State;
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-double Analog::GetNewValue(const Threshold& CurrentThreshold)
+uint8_t Analog::GetNewValue(const Threshold& CurrentThreshold)
 {
   const auto& NewThreshold = mThresholds.at(
     st::random::GetUniform(static_cast<size_t>(0),
     mThresholds.size() - 1));
 
-  if (std::abs(NewThreshold.mStart - CurrentThreshold.mStart) < 0.1)
+  if (NewThreshold.mStart == CurrentThreshold.mStart)
   {
     return GetNewValue(CurrentThreshold);
   }

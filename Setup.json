@@ -7,12 +7,12 @@
     "Threshold" : {
       "Label" : "Dangle",
       "Start" : 0.0,
-      "Stop" : 2.0
+      "Stop" : 127
     },
     "Threshold" : {
       "Label" : "Dungle",
-      "Start" : 2.0,
-      "Stop" : 5.0
+      "Start" : 128,
+      "Stop" : 255
     }
   },
   "Input" : {

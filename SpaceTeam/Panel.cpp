@@ -70,12 +70,15 @@ Panel::Panel(
 
         std::memcpy(Data.data(), Bytes.data() + 9, 8);
 
+        fmt::print("Data = {} {}\n", Data[28], Data[29]);
+
         for (unsigned i = 0; i < 48; ++i)
         {
           mUpdates.Add(st::Update{
             .mPiSerial = Serial,
             .mId = i,
             .mValue = Data[i]});
+
         }
       }
     });

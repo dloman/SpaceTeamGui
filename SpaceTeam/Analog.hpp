@@ -9,8 +9,8 @@ namespace st
 
   struct Threshold
   {
-    const double mStart;
-    const double mStop;
+    const uint8_t mStart;
+    const uint8_t mStop;
     const std::string mLabel;
   };
 
@@ -24,7 +24,7 @@ namespace st
 
       void IsCorrect(st::Success&);
 
-      void SetCurrentState(double State);
+      void SetCurrentState(uint8_t State);
 
       void Update(const st::Update&);
 
@@ -32,15 +32,15 @@ namespace st
 
       bool IsInCorrectState() const;
 
-      double GetNewValue(const Threshold& CurrentState);
+      uint8_t GetNewValue(const Threshold& CurrentState);
 
-      const Threshold& GetThreshold(double Value) const;
+      const Threshold& GetThreshold(uint8_t Value) const;
 
       static const std::vector<std::string> mSetWords;
 
-      double mDesiredValue;
+      uint8_t mDesiredValue;
 
-      double mCurrentState;
+      uint8_t mCurrentState;
 
       std::vector<Threshold> mThresholds;
   };
