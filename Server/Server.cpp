@@ -152,7 +152,6 @@ int main()
         SendReset(Game, pSession);
 
         Game.Success(true);
-        fmt::print("W000t\n");
       }
 
       if (Success.mInactiveFailCount > 0)
