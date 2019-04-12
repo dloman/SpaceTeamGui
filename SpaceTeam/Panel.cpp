@@ -60,6 +60,24 @@ Panel::Panel(
             .mValue = static_cast<uint8_t>(Bits[i])});
         }
       }
+      else if (static_cast<eDeviceID>(Bytes[0]) == eDeviceID::eAnalog)
+      {
+        uint64_t Serial;
+
+        std::memcpy(&Serial, Bytes.data() + 1, 8);
+
+        std::array<uint8_t, 48> Data;
+
+        std::memcpy(Data.data(), Bytes.data() + 9, 8);
+
+        for (unsigned i = 0; i < 48; ++i)
+        {
+          mUpdates.Add(st::Update{
+            .mPiSerial = Serial,
+            .mId = i,
+            .mValue = Data[i]});
+        }
+      }
     });
 }
 

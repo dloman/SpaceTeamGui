@@ -114,14 +114,16 @@ target_link_libraries(
   )
 
 if(BUILD_RPI)
-  list(APPEND I2C_SOURCE HardwareInterface/I2c.cpp)
+  list(APPEND HARDWARE_SOURCE HardwareInterface/I2c.cpp)
+  list(APPEND HARDWARE_SOURCE HardwareInterface/Spi.cpp)
 else()
-  list(APPEND I2C_SOURCE HardwareInterface/MockI2c.cpp)
+  list(APPEND HARDWARE_SOURCE HardwareInterface/MockI2c.cpp)
+  list(APPEND HARDWARE_SOURCE HardwareInterface/MockSpi.cpp)
 endif()
 
 add_library(
   SpaceTeamHardware
-  ${I2C_SOURCE}
+  ${HARDWARE_SOURCE}
   )
 
 target_link_libraries(

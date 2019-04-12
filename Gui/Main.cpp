@@ -101,10 +101,9 @@ ImFont* gpFont20;
 ImFont* gpFont30;
 
 static const ImVec2 PlotSize = {263, 69};
-
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void DoHardware()
+void DoDigital()
 {
   std::stringstream Stream;
 
@@ -126,6 +125,39 @@ void DoHardware()
   Stream.write(reinterpret_cast<const char*>(&Data), 8);
 
   gpClient->Write(Stream.str());
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void DoAnalog()
+{
+  std::stringstream Stream;
+
+  const uint8_t Analog = 0x00;
+
+  Stream.write(reinterpret_cast<const char*>(&Analog), 1);
+
+  Stream.write(reinterpret_cast<const char*>(&gSerialNumber), 8);
+
+  std::array<uint8_t, 48> Data;
+
+#ifdef ENABLE_HARDWARE
+  st::hw::adcReadFIFOAll(Data.data());
+#else
+ Data.fill(0);
+#endif
+  Stream.write(reinterpret_cast<const char*>(&Data), 48);
+
+  gpClient->Write(Stream.str());
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void DoHardware()
+{
+  DoDigital();
+
+  DoAnalog();
 }
 
 //------------------------------------------------------------------------------
