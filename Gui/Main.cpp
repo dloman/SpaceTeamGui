@@ -150,7 +150,7 @@ void DoAnalog()
 #else
  Data.fill(0);
 #endif
-  Stream.write(reinterpret_cast<const char*>(&Data.data()), 48);
+  Stream.write(reinterpret_cast<const char*>(Data.data()), 48);
 
   gpClient->Write(Stream.str());
 }
