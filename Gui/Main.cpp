@@ -366,8 +366,11 @@ int main(int argc, char** argv)
       .mConnectionCallback = [] (const auto&) { fmt::print("connected\n");},
       .mConnectionErrorCallback = OnError});
 
-  //sf::RenderWindow window(sf::VideoMode(640, 480), "H4ckerSp4ce t3AM", sf::Style::Fullscreen);
+#ifdef ENABLE_HARDWARE
+  sf::RenderWindow window(sf::VideoMode(640, 480), "H4ckerSp4ce t3AM", sf::Style::Fullscreen);
+#else
   sf::RenderWindow window(sf::VideoMode(640, 480), "H4ckerSp4ce t3AM");
+#endif
   window.setFramerateLimit(30);
   ImGui::SFML::Init(window);
 
