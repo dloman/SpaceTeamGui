@@ -378,8 +378,6 @@ void OnXmlPacket(const std::string& Bytes)
       if (gSerialNumber == *oSerial)
       {
         st::hw::setGPIOVal(*oValue);
-
-        fmt::print("value = {}", std::bitset<64>(*oValue).to_string());
       }
     }
     return;
@@ -391,8 +389,6 @@ void OnXmlPacket(const std::string& Bytes)
       if (gSerialNumber == *oSerial)
       {
         st::hw::setGPIODir(*oDirection);
-
-        fmt::print("value = {}", std::bitset<64>(*oDirection).to_string());
       }
     }
 

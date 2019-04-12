@@ -7,6 +7,8 @@
 #include <linux/spi/spidev.h>
 #include <cstring>
 
+namespace
+{
 using namespace std;
 
 
@@ -112,12 +114,13 @@ void adcWriteSetupReg(uint8_t channel, SetupReg_t* data)
    adcSPIDataRW(channel, buf, 1);
 }
 
+/*
 void adcWriteAveragingReg(uint8_t channel, AveragingReg_t* data)
 {
    unsigned char buf[2];
    buf[0] = data->data;
    adcSPIDataRW(channel, buf, 1);
-}
+}*/
 
 void adcWriteResetReg(uint8_t channel, ResetReg_t* data)
 {
@@ -183,39 +186,21 @@ int adcSetupAll()
 
    return 1;
 }
-
-//Needs 48 bytes of buffer
-void adcReadFIFOAll(unsigned char* buffer)
-{
-
-  static int Init = adcSetupAll();
-
-   for(uint8_t i = 0; i < NUM_ADCS; i++)
-   {
-      adcReadFIFO(i, (buffer + ((16*i))));
-   }
 }
 
-
-int main()
+namespace st::hw
 {
-   int fd, result;
-   unsigned char buffer[100];
+  //Needs 48 bytes of buffer
+  void adcReadFIFOAll(unsigned char* buffer)
+  {
 
-   cout << "Initializing" << endl ;
+    static int Init = adcSetupAll();
 
-   adcSetupAll();
+    (void)Init;
 
-   while(1){
-      cout << "\r";
-      adcReadFIFOAll(buffer);
-      for(int i = 0; i < 48; i++){
-         cout << hex << (int)buffer[i] << " ";
-      }
-      cout << endl;
-      usleep(100000);
-   }
-
-
+     for(uint8_t i = 0; i < NUM_ADCS; i++)
+     {
+        adcReadFIFO(i, (buffer + ((16*i))));
+     }
+  }
 }
-

@@ -3,6 +3,7 @@
 #include <SpaceTeam/Update.hpp>
 #include <Utility/Visitor.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <bitset>
 #include <random>
 
 using st::Game;
