@@ -416,8 +416,8 @@ void OnError(const std::string& Error)
 //------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-  //gXmlPacketAssembler.GetSignalPacket().Connect(
-  //[] (const auto& Bytes) { OnXmlPacket(Bytes); });
+  gXmlPacketAssembler.GetSignalPacket().Connect(
+    [] (const auto& Bytes) { OnXmlPacket(Bytes); });
 
   const auto Hostname = [&]
     {
