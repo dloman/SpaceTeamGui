@@ -274,13 +274,13 @@ void Game::SetCurrentRound(int Round)
 //------------------------------------------------------------------------------
 uint64_t Game::GetHardwareDirection(uint64_t PiSerial) const
 {
-  std::bitset<64> Bits(0);
+  std::bitset<64> Bits(std::numeric_limits<uint64_t>::max());
 
   for (const auto& Output : mOutputs)
   {
     if (Output.mPiSerial == PiSerial)
     {
-      Bits[Output.mId] = true;
+      Bits[Output.mId] = false;
     }
   }
 
