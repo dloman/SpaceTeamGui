@@ -193,7 +193,6 @@ namespace st::hw
   //Needs 48 bytes of buffer
   void adcReadFIFOAll(unsigned char* buffer)
   {
-
     static int Init = adcSetupAll();
 
     (void)Init;

@@ -1,34 +1,212 @@
 {
   "Input" : {
-    "Type" : "Analog",
-    "Id" : 0,
-    "PiSerial" : "00000000909428a3",
-    "Label" : "Dongle",
-    "Threshold" : {
-      "Label" : "Dangle",
-      "Start" : 0.0,
-      "Stop" : 127
-    },
-    "Threshold" : {
-      "Label" : "Dungle",
-      "Start" : 128,
-      "Stop" : 255
-    }
-  },
-  "Input" : {
     "Type" : "Digital",
-    "Id" : 1,
+    "Id" : 9,
     "PiSerial" : "00000000909428a3",
     "Label" : "Air Supply",
     "On Label" : "Greatest Hits",
     "Off Label" : "Off"
+    },
+
+  "Input" : {
+    "Type" : "Digital",
+    "Id" : 10,
+    "PiSerial" : "00000000909428a3",
+    "Label" : "Holodeck Simulation",
+    "On Label" : "On",
+    "Off Label" : "Off"
+  },
+
+  "Input" : {
+    "Type" : "Digital",
+    "Id" : 11,
+    "PiSerial" : "00000000909428a3",
+    "Label" : "Trash Compactor",
+    "On Label" : "SMASH!",
+    "Off Label" : "shutdown"
+  },
+
+  "Output" : {
+    "Id" : 12,
+    "PiSerial" : "00000000909428a3",
+    "Input" : 10
+  },
+
+  "Output" : {
+    "Id" : 13,
+    "PiSerial" : "00000000909428a3",
+    "Input" : 16
+  },
+
+  "Output" : {
+    "Id" : 14,
+    "PiSerial" : "00000000909428a3",
+    "Input" : 18
+  },
+
+  "Output" : {
+    "Id" : 15,
+    "PiSerial" : "00000000909428a3",
+    "Input" : 40
+  },
+
+  "Input" : {
+    "Type" : "Momentary",
+    "Id" : 16,
+    "PiSerial" : "00000000909428a3",
+    "Default Value" : 0,
+    "Message" : "Call your Mother"
+  },
+
+  "Input" : {
+    "Type" : "Digital",
+    "Id" : 18,
+    "PiSerial" : "00000000909428a3",
+    "Label" : "Turbo Encabulator",
+    "On Label" : "Activate Reciprocating Dingle Arm",
+    "Off Label" : "Damper Novertrunions"
+  },
+
+  "Input" : {
+    "Type" : "Momentary",
+    "Id" : 19,
+    "PiSerial" : "00000000909428a3",
+    "Default Value" : 0,
+    "Message" : "Win win win no matter what"
+  },
+  "Output" : {
+    "Id" : 20,
+    "PiSerial" : "00000000909428a3",
+    "Input" : 19
   },
   "Input" : {
     "Type" : "Momentary",
-    "Id" : 2,
+    "Id" : 21,
     "PiSerial" : "00000000909428a3",
-    "Label" : "",
     "Default Value" : 0,
-    "Message" : "Call your Mother"
+    "Message" : "Grab some Chalupas at Taco Bell"
+  },
+  "Output" : {
+    "Id" : 22,
+    "PiSerial" : "00000000909428a3",
+    "Input" : 21
+  },
+
+  "Input" : {
+    "Type" : "Momentary",
+    "Id" : 23,
+    "PiSerial" : "00000000909428a3",
+    "Default Value" : 0,
+    "Message" : "Grab some DLTs at Taco Bell"
+  },
+
+  "Output" : {
+    "Id" : 24,
+    "PiSerial" : "00000000909428a3",
+    "Input" : 23
+  },
+  "Input" : {
+    "Type" : "Momentary",
+    "Id" : 25,
+    "PiSerial" : "00000000909428a3",
+    "Default Value" : 0,
+    "Message" : "25"
+  },
+
+  "Output" : {
+    "Id" : 26,
+    "PiSerial" : "00000000909428a3",
+    "Input" : 25
+  },
+
+  "Input" : {
+    "Type" : "Momentary",
+    "Id" : 27,
+    "PiSerial" : "00000000909428a3",
+    "Default Value" : 0,
+    "Message" : "27"
+  },
+
+  "Output" : {
+    "Id" : 28,
+    "PiSerial" : "00000000909428a3",
+    "Input" : 27
+  },
+
+  "Input" : {
+    "Type" : "Momentary",
+    "Id" : 29,
+    "PiSerial" : "00000000909428a3",
+    "Default Value" : 0,
+    "Message" : "29"
+  },
+
+  "Output" : {
+    "Id" : 30,
+    "PiSerial" : "00000000909428a3",
+    "Input" : 29
+  },
+
+  "Input" : {
+    "Type" : "Digital",
+    "Id" : 31,
+    "PiSerial" : "00000000909428a3",
+    "Label" : "31",
+    "On Label" : "On",
+    "Off Label" : "Off"
+  },
+
+  "Output" : {
+    "Id" : 33,
+    "PiSerial" : "00000000909428a3",
+    "Input" : 37
+  },
+
+  "Output" : {
+    "Id" : 34,
+    "PiSerial" : "00000000909428a3",
+    "Input" : 11
+  },
+
+  "Output" : {
+    "Id" : 36,
+    "PiSerial" : "00000000909428a3",
+    "Input" : 31
+  },
+
+  "Input" : {
+    "Type" : "Digital",
+    "Id" : 37,
+    "PiSerial" : "00000000909428a3",
+    "Label" : "37",
+    "On Label" : "On",
+    "Off Label" : "Off"
+  },
+
+  "Input" : {
+    "Type" : "Digital",
+    "Id" : 38,
+    "PiSerial" : "00000000909428a3",
+    "Label" : "38",
+    "On Label" : "On",
+    "Off Label" : "Off"
+  },
+
+  "Input" : {
+    "Type" : "Digital",
+    "Id" : 39,
+    "PiSerial" : "00000000909428a3",
+    "Label" : "39",
+    "On Label" : "On",
+    "Off Label" : "Off"
+  },
+
+  "Input" : {
+    "Type" : "Digital",
+    "Id" : 40,
+    "PiSerial" : "00000000909428a3",
+    "Label" : "40",
+    "On Label" : "On",
+    "Off Label" : "Off"
   }
 }

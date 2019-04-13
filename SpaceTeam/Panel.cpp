@@ -72,7 +72,7 @@ Panel::Panel(
 
         //fmt::print("Data = ");
 
-        fmt::print("Data = {},{},{}", Data[27], Data[28], Data[29]);
+        //fmt::print("Data = {},{},{}\n", Data[27], Data[28], Data[29]);
 
         for (unsigned i = 0; i < 32; ++i)
         {
