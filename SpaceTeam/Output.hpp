@@ -9,5 +9,7 @@ namespace st
     const unsigned mId;
 
     bool mCurrentState;
+
+    const unsigned mInput;
   };
 }

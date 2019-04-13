@@ -11,8 +11,26 @@ std::chrono::time_point<std::chrono::system_clock> gGpioToggle(std::chrono::seco
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+size_t GetRoundSize(size_t NumberOfPanels, size_t RoundNumber)
+{
+  return 1;
+  //return NumberOfPanels * 5 + 2*(RoundNumber / 5);
+}
+
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void SendGameOver(std::vector<std::unique_ptr<st::Panel>>& Panels)
 {
+  if (Panels.empty())
+  {
+    return;
+  }
+
+  auto& FirstGame = Panels.front()->mGame;
+
+  auto Indecies = FirstGame.GetNextRoundInputs(GetRoundSize(Panels.size(), FirstGame.GetCurrentRound()));
+
   for (auto& pPanel : Panels)
   {
     boost::property_tree::ptree Tree;
@@ -31,6 +49,8 @@ void SendGameOver(std::vector<std::unique_ptr<st::Panel>>& Panels)
 
     pPanel->mGame.SetCurrentRound(1);
 
+    pPanel->mGame.SetNextRoundInputs(Indecies);
+
     pPanel->mpSession->Write(Stream.str());
   }
 
@@ -43,6 +63,15 @@ void SendGameOver(std::vector<std::unique_ptr<st::Panel>>& Panels)
 //------------------------------------------------------------------------------
 void SendNewRound(std::vector<std::unique_ptr<st::Panel>>& Panels)
 {
+  if (Panels.empty())
+  {
+    return;
+  }
+
+  auto& FirstGame = Panels.front()->mGame;
+
+  auto Indecies = FirstGame.GetNextRoundInputs(GetRoundSize(Panels.size(), FirstGame.GetCurrentRound()));
+
   for (auto& pPanel : Panels)
   {
     boost::property_tree::ptree Tree;
@@ -50,6 +79,8 @@ void SendNewRound(std::vector<std::unique_ptr<st::Panel>>& Panels)
     const auto LastRound = pPanel->mGame.GetCurrentRound();
 
     pPanel->mGame.SetCurrentRound(LastRound + 1);
+
+    pPanel->mGame.SetNextRoundInputs(Indecies);
 
     Tree.put(
       "reset",
@@ -132,13 +163,6 @@ void SendGpioValue(std::vector<std::unique_ptr<st::Panel>>& Panels)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void UpdateGameState(std::string_view Bytes)
-{
-  //loops over all panels and updates each game
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void OnError(const std::string& Error)
 {
   std::cerr << "Error = " << Error << std::endl;
@@ -176,6 +200,8 @@ int main()
 
         Panel.mGame.SetCurrentRound(1);
 
+        Panel.mGame.GetNextRoundInputs(Panels.size());
+
         SendGpioDirection(Panel.mGame, pSession);
       }});
 
@@ -200,11 +226,15 @@ int main()
         SendReset(Game, pSession);
 
         Game.Success(true);
+
+        fmt::print("success");
       }
 
       if (Success.mInactiveFailCount > 0)
       {
         Game.Success(false);
+
+        fmt::print("success");
       }
 
       if (std::chrono::system_clock::now() - Game.GetLastResetTime() > std::chrono::seconds(20))
@@ -212,6 +242,7 @@ int main()
         SendReset(Game, pSession);
 
         Game.Success(false);
+        fmt::print("success");
       }
 
       const auto CurrentScore = Game.GetCurrentScore();

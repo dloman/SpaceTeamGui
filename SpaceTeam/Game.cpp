@@ -67,7 +67,8 @@ namespace
     return st::Output{
       .mPiSerial = GetSerial(Tree.get<std::string>("PiSerial")),
       .mId = Tree.get<unsigned>("Id") - 1,
-      .mCurrentState = false};
+      .mCurrentState = false,
+      .mInput = Tree.get<unsigned>("Input")};
   }
 
   //----------------------------------------------------------------------------
@@ -137,18 +138,13 @@ Game::Game(boost::property_tree::ptree& Tree)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-size_t Game::GetRoundInputsSize() const
+std::unordered_set<uint64_t> Game::GetNextRoundInputs(size_t Size)
 {
-  return 5;
-}
+  std::unordered_set<uint64_t> Indecies;
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-void Game::GetNextRoundInputs()
-{
   mCurrentRoundInputs.clear();
 
-  while (mCurrentRoundInputs.size() < GetRoundInputsSize())
+  while (mCurrentRoundInputs.size() < Size)
   {
     auto& InputVariant = mInputs[GetRandomInputIndex(mInputs.size())];
 
@@ -164,10 +160,31 @@ void Game::GetNextRoundInputs()
         }) == mCurrentRoundInputs.end())
     {
       mCurrentRoundInputs.emplace_back(InputVariant);
+
+      Indecies.insert(GetId(InputVariant));
     }
   }
 
   mCurrentScore = 100;
+
+  return Indecies;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void Game::SetNextRoundInputs(std::unordered_set<uint64_t>& Indecies)
+{
+  auto GetId = [] (auto& InputVariant) {return std::visit([] (auto& Input) { return Input.GetId(); }, InputVariant);};
+
+  mCurrentRoundInputs.clear();
+
+  for (auto& InputVariant : mInputs)
+  {
+    if (Indecies.count(GetId(InputVariant)))
+    {
+      mCurrentRoundInputs.emplace_back(InputVariant);
+    }
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -267,8 +284,6 @@ int Game::GetCurrentRound() const
 void Game::SetCurrentRound(int Round)
 {
   mCurrentRound = Round;
-
-  GetNextRoundInputs();
 }
 
 //------------------------------------------------------------------------------
@@ -316,8 +331,18 @@ const std::unordered_set<uint64_t>& Game::GetPiSerials() const
 //------------------------------------------------------------------------------
 void Game::UpdateOutputs()
 {
+  auto GetId = [] (auto& InputVariant) {return std::visit([] (auto& Input) { return Input.GetId(); }, InputVariant);};
+
   for (auto& Output : mOutputs)
   {
-    Output.mCurrentState = !Output.mCurrentState;
+    auto IsInCurrentRound = (std::find_if(
+        mCurrentRoundInputs.begin(),
+        mCurrentRoundInputs.end(),
+        [Id = Output.mInput, &GetId] (const auto& Input)
+        {
+          return Id == GetId(Input.get());
+        }) == mCurrentRoundInputs.end());
+
+    Output.mCurrentState = IsInCurrentRound;
   }
 }

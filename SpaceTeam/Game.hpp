@@ -39,7 +39,9 @@ namespace st
 
       void Success(bool Success);
 
-      void GetNextRoundInputs();
+      std::unordered_set<uint64_t> GetNextRoundInputs(size_t Size);
+
+      void SetNextRoundInputs(std::unordered_set<uint64_t>& Indecies);
 
       uint64_t GetHardwareDirection(uint64_t PiSerial) const;
 
@@ -50,8 +52,6 @@ namespace st
       void UpdateOutputs();
 
     private:
-
-      size_t GetRoundInputsSize() const;
 
       double GetCurrentState(const InputVariant& Input);
 
