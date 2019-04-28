@@ -13,8 +13,7 @@ std::chrono::time_point<std::chrono::system_clock> gGpioToggle(std::chrono::seco
 //------------------------------------------------------------------------------
 size_t GetRoundSize(size_t NumberOfPanels, size_t RoundNumber)
 {
-  return 1;
-  //return NumberOfPanels * 5 + 2*(RoundNumber / 5);
+  return 30; //NumberOfPanels * 5 + 2*(RoundNumber / 5);
 }
 
 
@@ -29,7 +28,7 @@ void SendGameOver(std::vector<std::unique_ptr<st::Panel>>& Panels)
 
   auto& FirstGame = Panels.front()->mGame;
 
-  auto Indecies = FirstGame.GetNextRoundInputs(GetRoundSize(Panels.size(), FirstGame.GetCurrentRound()));
+  auto Indecies = FirstGame.GetNextRoundInputs(30);
 
   for (auto& pPanel : Panels)
   {
@@ -54,8 +53,6 @@ void SendGameOver(std::vector<std::unique_ptr<st::Panel>>& Panels)
     pPanel->mpSession->Write(Stream.str());
   }
 
-  std::this_thread::sleep_for(std::chrono::seconds(30));
-
   std::terminate();
 }
 
@@ -70,7 +67,7 @@ void SendNewRound(std::vector<std::unique_ptr<st::Panel>>& Panels)
 
   auto& FirstGame = Panels.front()->mGame;
 
-  auto Indecies = FirstGame.GetNextRoundInputs(GetRoundSize(Panels.size(), FirstGame.GetCurrentRound()));
+  auto Indecies = FirstGame.GetNextRoundInputs(30);
 
   for (auto& pPanel : Panels)
   {
@@ -192,7 +189,7 @@ int main()
       {
         fmt::print("New Connection!!\n");
 
-        std::lock_guard Lock(Mutex);
+        //std::lock_guard Lock(Mutex);
 
         Panels.emplace_back(std::make_unique<st::Panel>(Updates, Tree, pSession));
 
@@ -200,7 +197,7 @@ int main()
 
         Panel.mGame.SetCurrentRound(1);
 
-        Panel.mGame.GetNextRoundInputs(Panels.size());
+        Panel.mGame.GetNextRoundInputs(30);
 
         SendGpioDirection(Panel.mGame, pSession);
       }});
@@ -227,14 +224,16 @@ int main()
 
         Game.Success(true);
 
-        fmt::print("success");
+        fmt::print("success\n");
+        fmt::print("score = {}\n", Game.GetCurrentScore());
       }
 
       if (Success.mInactiveFailCount > 0)
       {
         Game.Success(false);
 
-        fmt::print("success");
+        fmt::print("fail\n");
+        fmt::print("score = {}\n", Game.GetCurrentScore());
       }
 
       if (std::chrono::system_clock::now() - Game.GetLastResetTime() > std::chrono::seconds(20))
@@ -242,7 +241,8 @@ int main()
         SendReset(Game, pSession);
 
         Game.Success(false);
-        fmt::print("success");
+        fmt::print("fail\n");
+        fmt::print("score = {}\n", Game.GetCurrentScore());
       }
 
       const auto CurrentScore = Game.GetCurrentScore();

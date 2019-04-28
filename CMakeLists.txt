@@ -164,3 +164,14 @@ target_link_libraries(
   ${OpenGL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
   )
+
+add_executable(
+  SpaceTeamSetup
+  Setup/Setup.cpp
+  )
+
+target_link_libraries(
+  SpaceTeamSetup
+  SpaceTeamHardware
+  fmt::fmt
+  )

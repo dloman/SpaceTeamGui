@@ -123,7 +123,7 @@ namespace
 }
 
 int Game::mCurrentScore = 100;
-int Game::mCurrentRound = 100;
+int Game::mCurrentRound = 0;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -144,7 +144,7 @@ std::unordered_set<uint64_t> Game::GetNextRoundInputs(size_t Size)
 
   mCurrentRoundInputs.clear();
 
-  while (mCurrentRoundInputs.size() < Size)
+  while (mCurrentRoundInputs.size() < 15)
   {
     auto& InputVariant = mInputs[GetRandomInputIndex(mInputs.size())];
 
@@ -191,9 +191,20 @@ void Game::SetNextRoundInputs(std::unordered_set<uint64_t>& Indecies)
 //------------------------------------------------------------------------------
 std::string Game::GetNextInputDisplay()
 {
-  moCurrentActiveVariant = *std::next(
+  auto GetId = [] (auto& InputVariant) {return std::visit([] (auto& Input) { return Input.GetId(); }, InputVariant);};
+
+  auto GetNext = [this] { return *std::next(
     mCurrentRoundInputs.begin(),
-    GetRandomInputIndex(mCurrentRoundInputs.size()));
+    GetRandomInputIndex(mCurrentRoundInputs.size()));};
+
+  auto Next = GetNext();
+
+  if (moCurrentActiveVariant && GetId(moCurrentActiveVariant->get()) == GetId(Next.get()))
+  {
+    return Game::GetNextInputDisplay();
+  }
+
+  moCurrentActiveVariant = Next;
 
   mLastResetTime = std::chrono::system_clock::now();
 
@@ -254,7 +265,7 @@ void Game::Success(bool Success)
   }
   else
   {
-    mCurrentScore -= 49;
+    mCurrentScore -= 7;
   }
 }
 
