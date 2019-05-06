@@ -105,5 +105,9 @@ void Digital::Update(const st::Update& Update)
     return;
   }
 
+  if (mCurrentState != Update.mValue)
+  {
+    fmt::print("Id {} changed\n", mId);
+  }
   mCurrentState = static_cast<bool>(Update.mValue);
 }

@@ -66,7 +66,7 @@ namespace
   {
     return st::Output{
       .mPiSerial = GetSerial(Tree.get<std::string>("PiSerial")),
-      .mId = Tree.get<unsigned>("Id") - 1,
+      .mId = Tree.get<unsigned>("Id"),
       .mCurrentState = false,
       .mInput = Tree.get<unsigned>("Input")};
   }
@@ -120,6 +120,13 @@ namespace
 
     return Serials;
   }
+
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  size_t GetRoundSize()
+  {
+    return 2;
+  }
 }
 
 int Game::mCurrentScore = 100;
@@ -138,13 +145,13 @@ Game::Game(boost::property_tree::ptree& Tree)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-std::unordered_set<uint64_t> Game::GetNextRoundInputs(size_t Size)
+std::unordered_set<uint64_t> Game::GetNextRoundInputs()
 {
   std::unordered_set<uint64_t> Indecies;
 
   mCurrentRoundInputs.clear();
 
-  while (mCurrentRoundInputs.size() < 15)
+  while (mCurrentRoundInputs.size() < GetRoundSize())
   {
     auto& InputVariant = mInputs[GetRandomInputIndex(mInputs.size())];
 
@@ -265,7 +272,7 @@ void Game::Success(bool Success)
   }
   else
   {
-    mCurrentScore -= 7;
+    mCurrentScore -= 1;
   }
 }
 
@@ -311,14 +318,14 @@ uint64_t Game::GetHardwareDirection(uint64_t PiSerial) const
     }
   }
 
-  return Bits.to_ulong();
+  return Bits.to_ullong();
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 uint64_t Game::GetHardwareValue(uint64_t PiSerial) const
 {
-  std::bitset<64> Bits(0);
+  std::bitset<64> Bits(std::numeric_limits<uint64_t>::max());
 
   for (const auto& Output : mOutputs)
   {
@@ -328,7 +335,7 @@ uint64_t Game::GetHardwareValue(uint64_t PiSerial) const
     }
   }
 
-  return Bits.to_ulong();
+  return Bits.to_ullong();
 }
 
 //------------------------------------------------------------------------------

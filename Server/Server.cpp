@@ -11,14 +11,6 @@ std::chrono::time_point<std::chrono::system_clock> gGpioToggle(std::chrono::seco
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-size_t GetRoundSize(size_t NumberOfPanels, size_t RoundNumber)
-{
-  return 30; //NumberOfPanels * 5 + 2*(RoundNumber / 5);
-}
-
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void SendGameOver(std::vector<std::unique_ptr<st::Panel>>& Panels)
 {
   if (Panels.empty())
@@ -28,7 +20,7 @@ void SendGameOver(std::vector<std::unique_ptr<st::Panel>>& Panels)
 
   auto& FirstGame = Panels.front()->mGame;
 
-  auto Indecies = FirstGame.GetNextRoundInputs(30);
+  auto Indecies = FirstGame.GetNextRoundInputs();
 
   for (auto& pPanel : Panels)
   {
@@ -67,7 +59,7 @@ void SendNewRound(std::vector<std::unique_ptr<st::Panel>>& Panels)
 
   auto& FirstGame = Panels.front()->mGame;
 
-  auto Indecies = FirstGame.GetNextRoundInputs(30);
+  auto Indecies = FirstGame.GetNextRoundInputs();
 
   for (auto& pPanel : Panels)
   {
@@ -189,7 +181,7 @@ int main()
       {
         fmt::print("New Connection!!\n");
 
-        //std::lock_guard Lock(Mutex);
+        std::lock_guard Lock(Mutex);
 
         Panels.emplace_back(std::make_unique<st::Panel>(Updates, Tree, pSession));
 
@@ -197,7 +189,7 @@ int main()
 
         Panel.mGame.SetCurrentRound(1);
 
-        Panel.mGame.GetNextRoundInputs(30);
+        Panel.mGame.GetNextRoundInputs();
 
         SendGpioDirection(Panel.mGame, pSession);
       }});

@@ -39,7 +39,7 @@ namespace st
 
       void Success(bool Success);
 
-      std::unordered_set<uint64_t> GetNextRoundInputs(size_t Size);
+      std::unordered_set<uint64_t> GetNextRoundInputs();
 
       void SetNextRoundInputs(std::unordered_set<uint64_t>& Indecies);
 
