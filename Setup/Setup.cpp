@@ -3,6 +3,7 @@
 #include <bitset>
 #include <thread>
 
+using namespace std::chrono_literals;
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 void testPin(size_t Index)
@@ -15,7 +16,7 @@ void testPin(size_t Index)
 
     Value[Index] = !Value[Index];
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    std::this_thread::sleep_for(250ms);
   }
 
   st::hw::setGPIOVal(0);
