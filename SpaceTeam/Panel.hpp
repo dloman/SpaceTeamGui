@@ -32,8 +32,14 @@ namespace st
 
       st::UpdateVec mUpdates;
 
+      std::optional<uint64_t> GetSerial() const;
+
     private:
 
       std::atomic<bool> mIsConnected;
+
+      std::optional<uint64_t> moSerial;
+
+      mutable std::mutex mMutex;
   };
 }

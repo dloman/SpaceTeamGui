@@ -382,8 +382,6 @@ int main(int argc, char** argv)
 
       std::stringstream Stream(Bytes);
 
-      fmt::print("{}\n", Bytes);
-
       boost::property_tree::read_json(Stream, Tree);
 
       const auto Serial = Tree.get<uint64_t>("PiSerial");

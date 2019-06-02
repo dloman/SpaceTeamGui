@@ -120,13 +120,6 @@ namespace
 
     return Serials;
   }
-
-  //----------------------------------------------------------------------------
-  //----------------------------------------------------------------------------
-  size_t GetRoundSize()
-  {
-    return 2;
-  }
 }
 
 int Game::mCurrentScore = 100;
@@ -145,49 +138,78 @@ Game::Game(boost::property_tree::ptree& Tree)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-std::unordered_set<uint64_t> Game::GetNextRoundInputs()
+std::vector<std::reference_wrapper<st::InputVariant>> Game::GetNextRoundInputs(
+  const std::vector<uint64_t>& ActivePanelSerialNumbers)
 {
-  std::unordered_set<uint64_t> Indecies;
-
   mCurrentRoundInputs.clear();
 
-  while (mCurrentRoundInputs.size() < GetRoundSize())
+  const size_t RoundSizePerPanel = [this, &ActivePanelSerialNumbers]
   {
-    auto& InputVariant = mInputs[GetRandomInputIndex(mInputs.size())];
+    const auto RoundSize = GetRoundSizePerPanel();
 
-    auto GetId = [] (auto& InputVariant) {return std::visit([] (auto& Input) { return Input.GetId(); }, InputVariant);};
-
-    if (
-      std::find_if(
-        mCurrentRoundInputs.begin(),
-        mCurrentRoundInputs.end(),
-        [Id = GetId(InputVariant), &InputVariant, &GetId] (const auto& Input)
-        {
-          return Id == GetId(Input.get());
-        }) == mCurrentRoundInputs.end())
+    if (RoundSize * ActivePanelSerialNumbers.size() > mInputs.size())
     {
-      mCurrentRoundInputs.emplace_back(InputVariant);
-
-      Indecies.insert(GetId(InputVariant));
+      return mInputs.size() / ActivePanelSerialNumbers.size();
     }
+
+    return RoundSize;
+  }();
+
+  for (const auto SerialNumber : ActivePanelSerialNumbers)
+  {
+    std::vector<std::reference_wrapper<InputVariant>> PanelInputs;
+
+    auto GetSerial = [] (auto& InputVariant)
+    {
+      return std::visit(
+        [] (auto& Input) { return Input.GetPiSerial(); },
+        InputVariant);
+    };
+
+    for (auto& InputVariant : mInputs)
+    {
+      if (SerialNumber == GetSerial(InputVariant))
+      {
+        PanelInputs.push_back(InputVariant);
+      }
+    }
+
+    std::sample(
+      PanelInputs.begin(),
+      PanelInputs.end(),
+      std::back_inserter(mCurrentRoundInputs),
+      std::min(RoundSizePerPanel, mInputs.size() - mCurrentRoundInputs.size()),
+      std::mt19937{std::random_device{}()});
   }
 
-  mCurrentScore = 100;
-
-  return Indecies;
+  return mCurrentRoundInputs;
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void Game::SetNextRoundInputs(std::unordered_set<uint64_t>& Indecies)
+void Game::SetNextRoundInputs(
+  const std::vector<std::reference_wrapper<InputVariant>>& CurrentRoundInputs)
 {
-  auto GetId = [] (auto& InputVariant) {return std::visit([] (auto& Input) { return Input.GetId(); }, InputVariant);};
+  auto GetIdSerial = [] (const auto& InputVariant)
+  {
+    return std::visit(
+      [] (const auto& Input) { return std::make_pair(Input.GetId(), Input.GetPiSerial());},
+      InputVariant);
+  };
 
   mCurrentRoundInputs.clear();
 
   for (auto& InputVariant : mInputs)
   {
-    if (Indecies.count(GetId(InputVariant)))
+    auto iInputVariant = std::find_if(
+      CurrentRoundInputs.begin(),
+      CurrentRoundInputs.end(),
+      [IdSerial = GetIdSerial(InputVariant), &GetIdSerial] (auto& InputVariant)
+      {
+        return IdSerial == GetIdSerial(InputVariant.get());
+      });
+
+    if (iInputVariant != CurrentRoundInputs.end())
     {
       mCurrentRoundInputs.emplace_back(InputVariant);
     }
@@ -377,4 +399,11 @@ const std::vector<st::InputVariant>& Game::GetInputs() const
 const std::vector<st::Output>& Game::GetOutputs() const
 {
   return mOutputs;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+size_t Game::GetRoundSizePerPanel()
+{
+  return 5 + (2 * (mCurrentRound / 3));
 }

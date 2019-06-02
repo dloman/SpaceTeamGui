@@ -25,7 +25,8 @@ Panel::Panel(
 : mGame(Tree),
   mpSession(pSession),
   mUpdates(),
-  mIsConnected(true)
+  mIsConnected(true),
+  moSerial(std::nullopt)
 {
   mpSession->GetOnDisconnectSignal().Connect(
     [this]
@@ -41,6 +42,12 @@ Panel::Panel(
         uint64_t Serial;
 
         std::memcpy(&Serial, Bytes.data() + 1, 8);
+
+        {
+          std::lock_guard Lock(mMutex);
+
+          moSerial = Serial;
+        }
 
         uint64_t Data;
 
@@ -61,6 +68,12 @@ Panel::Panel(
         uint64_t Serial;
 
         std::memcpy(&Serial, Bytes.data() + 1, 8);
+
+        {
+          std::lock_guard Lock(mMutex);
+
+          moSerial = Serial;
+        }
 
         std::array<uint8_t, 48> Data;
 
@@ -89,4 +102,13 @@ Panel::Panel(
 bool Panel::GetIsConnected() const
 {
   return mIsConnected;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+std::optional<uint64_t> Panel::GetSerial() const
+{
+  std::lock_guard Lock(mMutex);
+
+  return moSerial;
 }

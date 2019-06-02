@@ -23,10 +23,6 @@ void SendGameOver(std::vector<observer_ptr<st::Panel>>& Panels)
     return;
   }
 
-  auto& FirstGame = Panels.front()->mGame;
-
-  auto Indecies = FirstGame.GetNextRoundInputs();
-
   for (auto& pPanel : Panels)
   {
     boost::property_tree::ptree Tree;
@@ -43,9 +39,7 @@ void SendGameOver(std::vector<observer_ptr<st::Panel>>& Panels)
 
     boost::property_tree::write_json(std::cout, Tree);
 
-    pPanel->mGame.SetCurrentRound(1);
-
-    pPanel->mGame.SetNextRoundInputs(Indecies);
+    pPanel->mGame.SetCurrentRound(0);
 
     pPanel->mpSession->Write(Stream.str());
   }
@@ -76,6 +70,7 @@ void SendWaitingForGameToStart(observer_ptr<st::Panel>& pPanel)
   pPanel->mpSession->Write(Stream.str());
 }
 
+#include <Utility/Visitor.hpp>
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 void SendNewRound(std::vector<observer_ptr<st::Panel>>& Panels)
@@ -85,9 +80,35 @@ void SendNewRound(std::vector<observer_ptr<st::Panel>>& Panels)
     return;
   }
 
+  std::vector<uint64_t> ActiveSerialNumbers;
+
+  for (const auto& pPanel : Panels)
+  {
+    if (auto oSerial = pPanel->GetSerial())
+    {
+      ActiveSerialNumbers.emplace_back(*oSerial);
+    }
+    else
+    {
+      throw std::logic_error("unknown serial for panel");
+    }
+  }
+
   auto& FirstGame = Panels.front()->mGame;
 
-  auto Indecies = FirstGame.GetNextRoundInputs();
+  auto NextRoundInputs = FirstGame.GetNextRoundInputs(ActiveSerialNumbers);
+
+  fmt::print("{}", "NewRound = [");
+
+  for (const auto& InputVariant : NextRoundInputs)
+  {
+    fmt::print("{},", std::visit(st::Visitor{
+      [] (st::Momentary& Input) { return Input.GetMessage(); },
+      [] (auto& Input) { return Input.GetLabel(); }},
+      InputVariant.get()));
+  }
+
+  fmt::print("\n\n");
 
   for (auto& pPanel : Panels)
   {
@@ -97,7 +118,7 @@ void SendNewRound(std::vector<observer_ptr<st::Panel>>& Panels)
 
     pPanel->mGame.SetCurrentRound(LastRound + 1);
 
-    pPanel->mGame.SetNextRoundInputs(Indecies);
+    pPanel->mGame.SetNextRoundInputs(NextRoundInputs);
 
     Tree.put(
       "reset",
@@ -201,16 +222,24 @@ void GetGameStart(
 
   while (Temp)
   {
+    std::lock_guard Lock(Mutex);
+
+    if (Panels.size() == 2)
     {
-      std::lock_guard Lock(Mutex);
-
-      if (Panels.size())
-      {
-        Temp = false;
-      }
+      Temp = false;
     }
+  }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+  Temp = true;
+
+  while (Temp)
+  {
+    std::lock_guard Lock(Mutex);
+
+    Temp = !std::all_of(
+      Panels.begin(),
+      Panels.end(),
+      [] (const auto& pPanel) {return pPanel->GetSerial();});
   }
 }
 
@@ -228,16 +257,14 @@ void StartGame(
     throw std::logic_error("no panels connected");
   }
 
-  auto Indecies = Panels.front()->mGame.GetNextRoundInputs();
-
   for(const auto& pPanel : Panels)
   {
     CurrentGamePanels.emplace_back(pPanel.get());
 
-    pPanel->mGame.SetCurrentRound(1);
-
-    pPanel->mGame.SetNextRoundInputs(Indecies);
+    pPanel->mGame.SetCurrentRound(0);
   }
+
+  SendNewRound(CurrentGamePanels);
 }
 
 //------------------------------------------------------------------------------

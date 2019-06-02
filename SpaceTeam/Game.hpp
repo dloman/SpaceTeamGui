@@ -39,9 +39,11 @@ namespace st
 
       void Success(bool Success);
 
-      std::unordered_set<uint64_t> GetNextRoundInputs();
+      std::vector<std::reference_wrapper<st::InputVariant>> GetNextRoundInputs(
+        const std::vector<uint64_t>& ActivePanelSerialNumbers);
 
-      void SetNextRoundInputs(std::unordered_set<uint64_t>& Indecies);
+      void SetNextRoundInputs(
+        const std::vector<std::reference_wrapper<st::InputVariant>>& CurrentRoundInputs);
 
       uint64_t GetHardwareDirection(uint64_t PiSerial) const;
 
@@ -56,6 +58,8 @@ namespace st
       const std::vector<st::Output>& GetOutputs() const;
 
     private:
+
+      size_t GetRoundSizePerPanel();
 
       double GetCurrentState(const InputVariant& Input);
 
