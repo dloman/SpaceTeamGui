@@ -167,7 +167,7 @@ target_link_libraries(
 
 add_executable(
   GuiSimulator
-  Simulator/Sim.cpp
+  Simulator/Simulator.cpp
   )
 
 target_link_libraries(
