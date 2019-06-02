@@ -171,11 +171,11 @@ namespace sim
 
       ImGui::SameLine();
 
-      ImGui::RadioButton(mOnLabel.c_str(), &mState, 0);
+      ImGui::RadioButton(mOffLabel.c_str(), &mState, 0);
 
       ImGui::SameLine();
 
-      ImGui::RadioButton(mOffLabel.c_str(), &mState, 1);
+      ImGui::RadioButton(mOnLabel.c_str(), &mState, 1);
     }
 
     //--------------------------------------------------------------------------
@@ -313,7 +313,6 @@ void SendState(std::vector<DrawVariant>& Things)
   }
 
   gpClient->Write(SerializeDigital(DigitalOutput));
-  fmt::print("output = {} \n", DigitalOutput.to_string());
 
   //gpClient->Write(SerializeAnalog());
 }
@@ -374,8 +373,45 @@ int main(int argc, char** argv)
       InputVariant);
   }
 
-  //gXmlPacketAssembler.GetSignalPacket().Connect(
-  //[] (const auto& Bytes) { OnXmlPacket(Bytes); });
+  gXmlPacketAssembler.GetSignalPacket().Connect(
+  [&Things] (const auto& Bytes)
+  {
+    try
+    {
+      boost::property_tree::ptree Tree;
+
+      std::stringstream Stream(Bytes);
+
+      fmt::print("{}\n", Bytes);
+
+      boost::property_tree::read_json(Stream, Tree);
+
+      const auto Serial = Tree.get<uint64_t>("PiSerial");
+
+      const auto LedValues = std::bitset<64>(Tree.get<uint64_t>("gpioValue"));
+
+      for(auto& DrawVariant : Things)
+      {
+        std::visit(st::Visitor{
+          [&Serial, &LedValues] (auto& Input)
+          {
+            if (Serial != GetSerial(gSerials[gCurrentIndex]))
+            {
+              return;
+            }
+
+            Input.mIsActive = !LedValues[Input.mLedId];
+          }},
+          DrawVariant);
+      }
+    }
+    catch (...)
+    {
+    }
+  });
+
+
+
 
   const auto Hostname = [&]
     {
@@ -389,7 +425,7 @@ int main(int argc, char** argv)
   gpClient = std::make_unique<dl::tcp::Client<dl::tcp::Session>>(
     dl::tcp::ClientSettings<dl::tcp::Session>{
       .mHostname = Hostname,
-      //.mOnRxCallback = OnRx,
+      .mOnRxCallback = [] (const auto& Bytes) { gXmlPacketAssembler.Add(Bytes);},
       .mConnectionCallback = [] (const auto&) { fmt::print("connected\n");}});
   //.mConnectionErrorCallback = OnError});
 
@@ -415,7 +451,6 @@ int main(int argc, char** argv)
   ImGui::SFML::UpdateFontTexture();
 
   sf::Clock deltaClock;
-
 
   while (window.isOpen())
   {

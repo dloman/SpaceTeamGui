@@ -1,6 +1,7 @@
 #pragma once
 #include "Game.hpp"
 
+#include <SpaceTeam/Update.hpp>
 #include <Tcp/Client.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -18,13 +19,8 @@ namespace st
     public:
 
       Panel(
-        st::UpdateVec& Updates,
         boost::property_tree::ptree& Tree,
         std::shared_ptr<dl::tcp::Session>& pSession);
-
-      void OnRxDigital(std::string_view Bytes);
-
-      void OnRxAnalog(std::string_view Bytes);
 
       void OnError(const std::string&);
 
@@ -34,12 +30,10 @@ namespace st
 
       bool GetIsConnected() const;
 
+      st::UpdateVec mUpdates;
+
     private:
 
-      st::UpdateVec& mUpdates;
-
-      bool mIsConnected;
-
-      mutable std::mutex mMutex;
+      std::atomic<bool> mIsConnected;
   };
 }

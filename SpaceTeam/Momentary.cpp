@@ -30,9 +30,18 @@ const std::string& Momentary::GetNewCommand()
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool Momentary::IsPressed()
+bool Momentary::WasPressed()
 {
-  return mCurrentState != mDefaultValue;
+  const auto Updates = std::move(mUpdates);
+
+  for (const bool State : Updates)
+  {
+    if (State != mDefaultValue)
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -48,8 +57,10 @@ void Momentary::IsCorrect(st::Success& Success)
 
   if (mIsActive)
   {
-    if (IsPressed())
+    if (WasPressed())
     {
+      mLastToggle = system_clock::now();
+
       mIsActive = false;
 
       Success.mIsActiveCompleted = true;
@@ -58,12 +69,14 @@ void Momentary::IsCorrect(st::Success& Success)
     return;
   }
 
-  if (IsPressed())
+  if (WasPressed())
   {
     mLastToggle = system_clock::now();
 
     Success.mInactiveFailCount++;
   }
+
+  mUpdates.clear();
 
   return;
 }
@@ -86,7 +99,7 @@ void Momentary::Update(const st::Update& Update)
     return;
   }
 
-  mCurrentState = static_cast<bool>(Update.mValue);
+  mUpdates.push_back(static_cast<bool>(Update.mValue));
 }
 
 //-----------------------------------------------------------------------------

@@ -28,7 +28,7 @@ namespace st
       {
         std::lock_guard Lock(mMutex);
 
-        for (const auto& Update : mUpdates)
+        for (auto& Update : mUpdates)
         {
           Callback(Update);
         }
@@ -40,7 +40,7 @@ namespace st
       {
         std::lock_guard Lock(mMutex);
 
-        for (const auto& Update : mUpdates)
+        for (auto& Update : mUpdates)
         {
           Callback(Update);
         }

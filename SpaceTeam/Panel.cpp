@@ -1,5 +1,4 @@
 #include "Panel.hpp"
-#include <SpaceTeam/Update.hpp>
 #include <HardwareInterface/Types.hpp>
 
 #include <Tcp/Session.hpp>
@@ -21,19 +20,16 @@ using st::Panel;
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 Panel::Panel(
-  st::UpdateVec& Updates,
   boost::property_tree::ptree& Tree,
   std::shared_ptr<dl::tcp::Session>& pSession)
 : mGame(Tree),
   mpSession(pSession),
-  mUpdates(Updates),
+  mUpdates(),
   mIsConnected(true)
 {
   mpSession->GetOnDisconnectSignal().Connect(
     [this]
     {
-      std::lock_guard Lock(mMutex);
-
       mIsConnected = false;
     });
 
@@ -90,23 +86,7 @@ Panel::Panel(
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void Panel::OnRxDigital(std::string_view Bytes)
-{
-  // construct an update and add it to the mUpdates;
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-void Panel::OnRxAnalog(std::string_view Bytes)
-{
-  // construct an update and add it to the mUpdates;
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 bool Panel::GetIsConnected() const
 {
-  std::lock_guard Lock(mMutex);
-
   return mIsConnected;
 }

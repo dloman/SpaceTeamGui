@@ -28,13 +28,15 @@ namespace st
 
     private:
 
-      bool IsPressed();
+      bool WasPressed();
 
       const bool mDefaultValue;
 
       const std::string mMessage;
 
       bool mCurrentState;
+
+      std::vector<bool> mUpdates;
 
       mutable std::chrono::time_point<std::chrono::system_clock> mLastToggle;
   };

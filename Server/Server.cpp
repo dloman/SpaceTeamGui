@@ -5,13 +5,18 @@
 #include <Tcp/Server.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <fmt/format.h>
+#include <csignal>
 #include <mutex>
+#include <experimental/memory>
 
 std::chrono::time_point<std::chrono::system_clock> gGpioToggle(std::chrono::seconds(0));
 
+template <typename T>
+using observer_ptr = std::experimental::observer_ptr<T>;
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void SendGameOver(std::vector<std::unique_ptr<st::Panel>>& Panels)
+void SendGameOver(std::vector<observer_ptr<st::Panel>>& Panels)
 {
   if (Panels.empty())
   {
@@ -50,7 +55,30 @@ void SendGameOver(std::vector<std::unique_ptr<st::Panel>>& Panels)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void SendNewRound(std::vector<std::unique_ptr<st::Panel>>& Panels)
+void SendWaitingForGameToStart(observer_ptr<st::Panel>& pPanel)
+{
+  boost::property_tree::ptree Tree;
+
+  Tree.put(
+    "reset",
+    "Waiting for New Game to start");
+
+  Tree.put("wait", true);
+
+  std::stringstream Stream;
+
+  boost::property_tree::write_json(Stream, Tree);
+
+  boost::property_tree::write_json(std::cout, Tree);
+
+  pPanel->mGame.SetCurrentRound(1);
+
+  pPanel->mpSession->Write(Stream.str());
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void SendNewRound(std::vector<observer_ptr<st::Panel>>& Panels)
 {
   if (Panels.empty())
   {
@@ -129,7 +157,7 @@ void SendGpioDirection(st::Game& Game, std::shared_ptr<dl::tcp::Session>& pSessi
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void SendGpioValue(std::vector<std::unique_ptr<st::Panel>>& Panels)
+void SendGpioValue(std::vector<observer_ptr<st::Panel>>& Panels)
 {
   for (auto& pPanel : Panels)
   {
@@ -160,6 +188,60 @@ void OnError(const std::string& Error)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+void GetGameStart(
+  std::mutex& Mutex,
+  std::vector<std::unique_ptr<st::Panel>>& Panels)
+{
+  fmt::print("Type enter to Begin game\n");
+
+  //std::string unused;
+  //std::cin >> unused;
+
+  std::atomic<bool> Temp(true);
+
+  while (Temp)
+  {
+    {
+      std::lock_guard Lock(Mutex);
+
+      if (Panels.size())
+      {
+        Temp = false;
+      }
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+  }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void StartGame(
+  std::mutex& Mutex,
+  std::vector<std::unique_ptr<st::Panel>>& Panels,
+  std::vector<observer_ptr<st::Panel>>& CurrentGamePanels)
+{
+  std::lock_guard Lock(Mutex);
+
+  if (Panels.empty())
+  {
+    throw std::logic_error("no panels connected");
+  }
+
+  auto Indecies = Panels.front()->mGame.GetNextRoundInputs();
+
+  for(const auto& pPanel : Panels)
+  {
+    CurrentGamePanels.emplace_back(pPanel.get());
+
+    pPanel->mGame.SetCurrentRound(1);
+
+    pPanel->mGame.SetNextRoundInputs(Indecies);
+  }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int main()
 {
   std::mutex Mutex;
@@ -167,6 +249,8 @@ int main()
   st::UpdateVec Updates;
 
   std::vector<std::unique_ptr<st::Panel>> Panels;
+
+  std::vector<observer_ptr<st::Panel>> CurrentGamePanels;
 
   boost::property_tree::ptree Tree;
 
@@ -183,24 +267,24 @@ int main()
 
         std::lock_guard Lock(Mutex);
 
-        Panels.emplace_back(std::make_unique<st::Panel>(Updates, Tree, pSession));
+        Panels.emplace_back(std::make_unique<st::Panel>(Tree, pSession));
 
         auto& Panel = *(Panels.back());
 
-        Panel.mGame.SetCurrentRound(1);
-
-        Panel.mGame.GetNextRoundInputs();
+        Panel.mGame.SetCurrentRound(0);
 
         SendGpioDirection(Panel.mGame, pSession);
       }});
 
+  GetGameStart(Mutex, Panels);
+
+  StartGame(Mutex, Panels, CurrentGamePanels);
+
   while(true)
   {
-    std::this_thread::sleep_for(std::chrono::milliseconds(250));
-
     std::lock_guard Lock(Mutex);
 
-    for (auto& pPanel : Panels)
+    for (auto& pPanel : CurrentGamePanels)
     {
       auto& Game = pPanel->mGame;
 
@@ -241,11 +325,11 @@ int main()
 
       if (CurrentScore <= 0)
       {
-        SendGameOver(Panels);
+        SendGameOver(CurrentGamePanels);
       }
       else if (CurrentScore >= 150)
       {
-        SendNewRound(Panels);
+        SendNewRound(CurrentGamePanels);
       }
     }
 
@@ -259,17 +343,39 @@ int main()
         }),
       Panels.end());
 
+    CurrentGamePanels.erase(
+      std::remove_if(
+        CurrentGamePanels.begin(),
+        CurrentGamePanels.end(),
+        [](const auto& pPanel)
+        {
+          return !pPanel->GetIsConnected();
+        }),
+      CurrentGamePanels.end());
 
     if (std::chrono::system_clock::now()- gGpioToggle > std::chrono::seconds(1))
     {
-      for (auto& pPanel : Panels)
+      for (auto& pPanel : CurrentGamePanels)
       {
         pPanel->mGame.UpdateOutputs();
       }
 
       gGpioToggle = std::chrono::system_clock::now();
-
     }
-    SendGpioValue(Panels);
+
+    SendGpioValue(CurrentGamePanels);
+
+    Updates.Clear();
+
+    for (auto& pPanel : CurrentGamePanels)
+    {
+      pPanel->mUpdates.ForEachAndClear(
+        [&Updates] (st::Update& Update)
+        {
+          Updates.Add(Update);
+        });
+    }
   }
+
+
 }
