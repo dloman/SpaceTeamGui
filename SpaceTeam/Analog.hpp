@@ -26,6 +26,8 @@ namespace st
 
       void SetCurrentState(uint8_t State);
 
+      uint8_t GetCurrentState() const;
+
       void Update(const st::Update&);
 
     private:

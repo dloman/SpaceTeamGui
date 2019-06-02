@@ -51,6 +51,10 @@ namespace st
 
       void UpdateOutputs();
 
+      const std::vector<st::InputVariant>& GetInputs() const;
+
+      const std::vector<st::Output>& GetOutputs() const;
+
     private:
 
       double GetCurrentState(const InputVariant& Input);

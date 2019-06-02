@@ -166,6 +166,22 @@ target_link_libraries(
   )
 
 add_executable(
+  GuiSimulator
+  Simulator/Sim.cpp
+  )
+
+target_link_libraries(
+  GuiSimulator
+  SpaceTeam
+  SpaceTeamUtility
+  imgui-sfml
+  DanLibTcp
+  ${SFML_LIBRARIES}
+  ${OpenGL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  )
+
+add_executable(
   SpaceTeamSetup
   Setup/Setup.cpp
   )

@@ -22,6 +22,10 @@ namespace st
 
       void Update(const st::Update&);
 
+      const std::string& GetMessage() const;
+
+      bool GetDefaultValue() const;
+
     private:
 
       bool IsPressed();

@@ -73,7 +73,7 @@ namespace
 
   //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
-  std::vector<st::InputVariant> GetInputs(boost::property_tree::ptree& Tree)
+  std::vector<st::InputVariant> ConstructInputs(boost::property_tree::ptree& Tree)
   {
     std::vector<st::InputVariant> Inputs;
 
@@ -90,7 +90,7 @@ namespace
 
   //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
-  std::vector<st::Output> GetOutputs(boost::property_tree::ptree& Tree)
+  std::vector<st::Output> ConstructOutputs(boost::property_tree::ptree& Tree)
   {
     std::vector<st::Output> Inputs;
 
@@ -135,9 +135,9 @@ int Game::mCurrentRound = 0;
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 Game::Game(boost::property_tree::ptree& Tree)
-: mInputs(GetInputs(Tree)),
+: mInputs(ConstructInputs(Tree)),
   moCurrentActiveVariant(std::nullopt),
-  mOutputs(GetOutputs(Tree)),
+  mOutputs(ConstructOutputs(Tree)),
   mPiSerials(GetSerials(Tree)),
   mLastResetTime(std::chrono::milliseconds(0))
 {
@@ -363,4 +363,18 @@ void Game::UpdateOutputs()
 
     Output.mCurrentState = IsInCurrentRound;
   }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+const std::vector<st::InputVariant>& Game::GetInputs() const
+{
+  return mInputs;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+const std::vector<st::Output>& Game::GetOutputs() const
+{
+  return mOutputs;
 }

@@ -88,3 +88,17 @@ void Momentary::Update(const st::Update& Update)
 
   mCurrentState = static_cast<bool>(Update.mValue);
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+const std::string& Momentary::GetMessage() const
+{
+  return mMessage;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+bool Momentary::GetDefaultValue() const
+{
+  return mDefaultValue;
+}

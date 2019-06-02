@@ -12,6 +12,10 @@ namespace st
 
       uint64_t GetPiSerial() const;
 
+      const std::string& GetLabel() const;
+
+      bool GetIsActive() const;
+
     protected:
 
       Input(const boost::property_tree::ptree& Tree);

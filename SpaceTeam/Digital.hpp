@@ -19,7 +19,13 @@ namespace st
 
       void SetCurrentState(bool State);
 
+      bool GetCurrentState() const;
+
       void Update(const st::Update&);
+
+      const std::string& GetOnLabel() const;
+
+      const std::string& GetOffLabel() const;
 
     private:
 

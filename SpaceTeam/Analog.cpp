@@ -152,6 +152,12 @@ void Analog::Update(const st::Update& Update)
   {
     return;
   }
+}
 
-  //Set State
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+uint8_t Analog::GetCurrentState() const
+{
+  return mCurrentState;
 }
