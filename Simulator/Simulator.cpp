@@ -27,7 +27,7 @@ ImFont* gpFont20;
 ImFont* gpFont30;
 
 std::vector<std::string> gSerials;
-uint64_t mCurrentSerial;
+std::string gActionText;
 
 namespace
 {
@@ -246,6 +246,8 @@ void DrawPanel(std::vector<DrawVariant>& Things)
 
   MakeCombo("Panel Selector", gCurrentIndex, gSerials);
 
+  ImGui::TextWrapped(gActionText.c_str());
+
   for(auto& Thing : Things)
   {
     std::visit([] (auto& Input) { Input.Draw(); }, Thing);
@@ -382,7 +384,16 @@ int main(int argc, char** argv)
 
       std::stringstream Stream(Bytes);
 
+      fmt::print("{}\n ", Bytes);
+
       boost::property_tree::read_json(Stream, Tree);
+
+      if (const auto oText = Tree.get_optional<std::string>("reset"))
+      {
+        gActionText = *oText;
+
+        return;
+      }
 
       const auto Serial = Tree.get<uint64_t>("PiSerial");
 
