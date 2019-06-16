@@ -25,6 +25,8 @@ void SendGameOver(std::vector<observer_ptr<st::Panel>>& Panels, st::Game& Game)
 
   Game.SetCurrentRound(0);
 
+  Game.SetCurrentScore(st::StartingScore);
+
   for (auto& pPanel : Panels)
   {
     boost::property_tree::ptree Tree;
@@ -98,6 +100,8 @@ void SendNewRound(std::vector<observer_ptr<st::Panel>>& Panels, st::Game& Game)
 
   Game.SetCurrentRound(CurrentRound);
 
+  Game.SetCurrentScore(st::StartingScore);
+
   //Debug
   fmt::print("{}", "NewRound = [");
 
@@ -109,7 +113,7 @@ void SendNewRound(std::vector<observer_ptr<st::Panel>>& Panels, st::Game& Game)
       InputVariant.get()));
   }
 
-  fmt::print("\n\n");
+  fmt::print("]\n\n");
   //Debug
 
   for (auto& pPanel : Panels)
@@ -226,6 +230,7 @@ void GetGameStart(
   }
 
   Temp = true;
+  fmt::print("wtf is going on size == {}\n", Panels.size());
 
   while (Temp)
   {
@@ -254,6 +259,8 @@ void StartGame(
   }
 
   Game.SetCurrentRound(0);
+
+  Game.SetCurrentScore(st::StartingScore);
 
   for(const auto& pPanel : Panels)
   {
@@ -329,8 +336,6 @@ int main()
 
   dl::tcp::Server TcpServer(dl::tcp::ServerSettings{
     .mPort = 8181,
-    .mNumberOfIoThreads = 2,
-    .mNumberOfCallbackThreads = 2,
     .mOnNewSessionCallback =
       [&] (std::shared_ptr<dl::tcp::Session> pSession)
       {
@@ -402,9 +407,9 @@ int main()
       Game.UpdateOutputs();
 
       GpioToggle = std::chrono::system_clock::now();
-    }
 
-    SendGpioValue(CurrentGamePanels, Game);
+      SendGpioValue(CurrentGamePanels, Game);
+    }
 
     //Get updates from each panel
     Updates.Clear();

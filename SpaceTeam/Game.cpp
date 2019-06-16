@@ -122,7 +122,7 @@ namespace
   }
 }
 
-int Game::mCurrentScore = 100;
+int Game::mCurrentScore = StartingScore;
 int Game::mCurrentRound = 0;
 
 //------------------------------------------------------------------------------

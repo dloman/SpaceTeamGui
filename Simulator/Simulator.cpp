@@ -448,7 +448,6 @@ int main(int argc, char** argv)
       .mHostname = Hostname,
       .mOnRxCallback = [] (const auto& Bytes) { gJsonPacketAssembler.Add(Bytes);},
       .mConnectionCallback = [] (const auto&) { fmt::print("connected\n");}});
-  //.mConnectionErrorCallback = OnError});
 
   sf::RenderWindow window(sf::VideoMode(1610, 810), "H4ckerSp4ce t3AM");
   window.setFramerateLimit(30);
