@@ -41,9 +41,9 @@ Digital::Digital(const boost::property_tree::ptree& Tree)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-std::string Digital::GetNewCommand()
+std::string Digital::GetNewCommand(st::SerialId Serial)
 {
-  mIsActive = true;
+  mIsActive = Serial;
 
   mDesiredState = !mCurrentState;
 
@@ -68,9 +68,9 @@ void Digital::IsCorrect(st::Success& Success)
   {
     if (IsInCorrectState())
     {
-      mIsActive = false;
+      mIsActive = std::nullopt;
 
-      Success.mIsActiveCompleted = true;
+      Success.mIsActiveCompleted.insert(mPiSerial);
     }
     return;
   }

@@ -58,9 +58,9 @@ Analog::Analog(const boost::property_tree::ptree& Tree)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-std::string Analog::GetNewCommand()
+std::string Analog::GetNewCommand(st::SerialId Serial)
 {
-  mIsActive = true;
+  mIsActive = Serial;
 
   mDesiredValue = GetNewValue(GetThreshold(mCurrentState));
 
@@ -87,9 +87,9 @@ void Analog::IsCorrect(st::Success& Success)
   {
     if (IsInCorrectState())
     {
-      mIsActive = false;
+      mIsActive = std::nullopt;
 
-      Success.mIsActiveCompleted = true;
+      Success.mIsActiveCompleted.insert(mPiSerial);
     }
 
     return;

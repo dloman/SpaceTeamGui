@@ -4,7 +4,7 @@
 
 namespace st
 {
-  class XmlAssembler
+  class JsonAssembler
   {
     public:
 

@@ -3,14 +3,15 @@
 #include <cstdint>
 #include <mutex>
 #include <vector>
+#include <SpaceTeam/Id.hpp>
 
 namespace st
 {
   struct Update
   {
-    const uint64_t mPiSerial;
+    const st::SerialId mPiSerial;
 
-    const unsigned mId;
+    const st::ButtonId mId;
 
     const uint8_t mValue;
   };

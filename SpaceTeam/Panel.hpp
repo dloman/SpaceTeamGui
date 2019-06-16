@@ -1,9 +1,9 @@
 #pragma once
 #include "Game.hpp"
 
+#include <SpaceTeam/Id.hpp>
 #include <SpaceTeam/Update.hpp>
 #include <Tcp/Client.hpp>
-#include <boost/property_tree/ptree.hpp>
 
 namespace dl::tcp
 {
@@ -18,27 +18,27 @@ namespace st
   {
     public:
 
-      Panel(
-        boost::property_tree::ptree& Tree,
-        std::shared_ptr<dl::tcp::Session>& pSession);
+      Panel(std::shared_ptr<dl::tcp::Session>& pSession);
 
       void OnError(const std::string&);
 
-      st::Game mGame;
+      bool GetIsConnected() const;
 
       std::shared_ptr<dl::tcp::Session> mpSession;
 
-      bool GetIsConnected() const;
-
       st::UpdateVec mUpdates;
 
-      std::optional<uint64_t> GetSerial() const;
+      std::optional<st::SerialId> GetSerial() const;
+
+      const st::PanelId mId;
 
     private:
 
+      static size_t mCount;
+
       std::atomic<bool> mIsConnected;
 
-      std::optional<uint64_t> moSerial;
+      std::optional<st::SerialId> moSerial;
 
       mutable std::mutex mMutex;
   };

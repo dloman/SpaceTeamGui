@@ -9,19 +9,21 @@
 #include <mutex>
 #include <experimental/memory>
 
-std::chrono::time_point<std::chrono::system_clock> gGpioToggle(std::chrono::seconds(0));
-
 template <typename T>
 using observer_ptr = std::experimental::observer_ptr<T>;
 
+using namespace std::chrono_literals;
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void SendGameOver(std::vector<observer_ptr<st::Panel>>& Panels)
+void SendGameOver(std::vector<observer_ptr<st::Panel>>& Panels, st::Game& Game)
 {
   if (Panels.empty())
   {
     return;
   }
+
+  Game.SetCurrentRound(0);
 
   for (auto& pPanel : Panels)
   {
@@ -39,8 +41,6 @@ void SendGameOver(std::vector<observer_ptr<st::Panel>>& Panels)
 
     boost::property_tree::write_json(std::cout, Tree);
 
-    pPanel->mGame.SetCurrentRound(0);
-
     pPanel->mpSession->Write(Stream.str());
   }
 
@@ -49,7 +49,7 @@ void SendGameOver(std::vector<observer_ptr<st::Panel>>& Panels)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void SendWaitingForGameToStart(observer_ptr<st::Panel>& pPanel)
+void SendWaitingForGameToStart(dl::tcp::Session& Session)
 {
   boost::property_tree::ptree Tree;
 
@@ -65,22 +65,20 @@ void SendWaitingForGameToStart(observer_ptr<st::Panel>& pPanel)
 
   boost::property_tree::write_json(std::cout, Tree);
 
-  pPanel->mGame.SetCurrentRound(1);
-
-  pPanel->mpSession->Write(Stream.str());
+  Session.Write(Stream.str());
 }
 
 #include <Utility/Visitor.hpp>
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void SendNewRound(std::vector<observer_ptr<st::Panel>>& Panels)
+void SendNewRound(std::vector<observer_ptr<st::Panel>>& Panels, st::Game& Game)
 {
   if (Panels.empty())
   {
     return;
   }
 
-  std::vector<uint64_t> ActiveSerialNumbers;
+  std::vector<st::SerialId> ActiveSerialNumbers;
 
   for (const auto& pPanel : Panels)
   {
@@ -94,13 +92,16 @@ void SendNewRound(std::vector<observer_ptr<st::Panel>>& Panels)
     }
   }
 
-  auto& FirstGame = Panels.front()->mGame;
+  Game.GetNextRoundInputs(ActiveSerialNumbers);
 
-  auto NextRoundInputs = FirstGame.GetNextRoundInputs(ActiveSerialNumbers);
+  const auto CurrentRound = Game.GetCurrentRound() + 1;
 
+  Game.SetCurrentRound(CurrentRound);
+
+  //Debug
   fmt::print("{}", "NewRound = [");
 
-  for (const auto& InputVariant : NextRoundInputs)
+  for (const auto& InputVariant : Game.GetCurrentRoundInputs())
   {
     fmt::print("{},", std::visit(st::Visitor{
       [] (st::Momentary& Input) { return Input.GetMessage(); },
@@ -109,23 +110,18 @@ void SendNewRound(std::vector<observer_ptr<st::Panel>>& Panels)
   }
 
   fmt::print("\n\n");
+  //Debug
 
   for (auto& pPanel : Panels)
   {
     boost::property_tree::ptree Tree;
 
-    const auto LastRound = pPanel->mGame.GetCurrentRound();
-
-    pPanel->mGame.SetCurrentRound(LastRound + 1);
-
-    pPanel->mGame.SetNextRoundInputs(NextRoundInputs);
-
     Tree.put(
       "reset",
       fmt::format(
         "Round {} Completed. Good job so far, don't screw it up. You're almost there. Get Ready for Round {}!\n",
-        LastRound,
-        pPanel->mGame.GetCurrentRound()));
+        CurrentRound - 1,
+        CurrentRound));
 
     Tree.put("wait", true);
 
@@ -133,19 +129,17 @@ void SendNewRound(std::vector<observer_ptr<st::Panel>>& Panels)
 
     boost::property_tree::write_json(Stream, Tree);
 
-    boost::property_tree::write_json(std::cout, Tree);
-
     pPanel->mpSession->Write(Stream.str());
   }
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void SendReset(st::Game& Game, std::shared_ptr<dl::tcp::Session>& pSession)
+void SendReset(st::Game& Game, st::Panel& Panel)
 {
   boost::property_tree::ptree Tree;
 
-  Tree.put("reset", Game.GetNextInputDisplay());
+  Tree.put("reset", Game.GetNextInputDisplay(*(Panel.GetSerial())));
 
   std::stringstream Stream;
 
@@ -153,12 +147,14 @@ void SendReset(st::Game& Game, std::shared_ptr<dl::tcp::Session>& pSession)
 
   boost::property_tree::write_json(std::cout, Tree);
 
-  pSession->Write(Stream.str());
+  Panel.mpSession->Write(Stream.str());
+
+  fmt::print("{} \n","!!!!!!");
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void SendGpioDirection(st::Game& Game, std::shared_ptr<dl::tcp::Session>& pSession)
+void SendGpioDirection(st::Game& Game, dl::tcp::Session& Session)
 {
   for (const auto Serial : Game.GetPiSerials())
   {
@@ -172,30 +168,29 @@ void SendGpioDirection(st::Game& Game, std::shared_ptr<dl::tcp::Session>& pSessi
 
     boost::property_tree::write_json(Stream, Tree);
 
-    pSession->Write(Stream.str());
+    Session.Write(Stream.str());
   }
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void SendGpioValue(std::vector<observer_ptr<st::Panel>>& Panels)
+void SendGpioValue(std::vector<observer_ptr<st::Panel>>& Panels, st::Game& Game)
 {
   for (auto& pPanel : Panels)
   {
-    for (const auto Serial : pPanel->mGame.GetPiSerials())
-    {
-      boost::property_tree::ptree Tree;
+    boost::property_tree::ptree Tree;
 
-      Tree.put("gpioValue", pPanel->mGame.GetHardwareValue(Serial));
+    auto Serial = *pPanel->GetSerial();
 
-      Tree.put("PiSerial", Serial);
+    Tree.put("gpioValue", Game.GetHardwareValue(Serial));
 
-      std::stringstream Stream;
+    Tree.put("PiSerial", Serial);
 
-      boost::property_tree::write_json(Stream, Tree);
+    std::stringstream Stream;
 
-      pPanel->mpSession->Write(Stream.str());
-    }
+    boost::property_tree::write_json(Stream, Tree);
+
+    pPanel->mpSession->Write(Stream.str());
   }
 }
 
@@ -247,6 +242,7 @@ void GetGameStart(
 //------------------------------------------------------------------------------
 void StartGame(
   std::mutex& Mutex,
+  st::Game& Game,
   std::vector<std::unique_ptr<st::Panel>>& Panels,
   std::vector<observer_ptr<st::Panel>>& CurrentGamePanels)
 {
@@ -257,14 +253,58 @@ void StartGame(
     throw std::logic_error("no panels connected");
   }
 
+  Game.SetCurrentRound(0);
+
   for(const auto& pPanel : Panels)
   {
     CurrentGamePanels.emplace_back(pPanel.get());
-
-    pPanel->mGame.SetCurrentRound(0);
   }
 
-  SendNewRound(CurrentGamePanels);
+  SendNewRound(CurrentGamePanels, Game);
+
+  SendGpioValue(CurrentGamePanels, Game);
+
+  std::this_thread::sleep_for(5s);
+
+  for(const auto& pPanel : Panels)
+  {
+    SendReset(Game, *pPanel);
+  }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void UpdatePanelWithSuccess(st::Panel& Panel, st::Game& Game, const st::Success& Success)
+{
+  auto Serial = *Panel.GetSerial();
+
+  if (Success.mIsActiveCompleted.contains(Serial))
+  {
+    fmt::print("success\n");
+    fmt::print("score = {}\n", Game.GetCurrentScore());
+
+    SendReset(Game, Panel);
+
+    Game.Success(true, Serial);
+  }
+
+  if (Success.mInactiveFailCount > 0)
+  {
+    fmt::print("fail\n");
+    fmt::print("score = {}\n", Game.GetCurrentScore());
+
+    Game.Success(false, Serial);
+  }
+
+  if (std::chrono::system_clock::now() - Game.GetLastResetTime(Serial) > 20s)
+  {
+    fmt::print("fail\n");
+    fmt::print("score = {}\n", Game.GetCurrentScore());
+
+    SendReset(Game, Panel);
+
+    Game.Success(false, Serial);
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -283,6 +323,10 @@ int main()
 
   boost::property_tree::read_json("Setup.json", Tree);
 
+  st::Game Game(Tree);
+
+  std::chrono::time_point<std::chrono::system_clock> GpioToggle(std::chrono::seconds(0));
+
   dl::tcp::Server TcpServer(dl::tcp::ServerSettings{
     .mPort = 8181,
     .mNumberOfIoThreads = 2,
@@ -292,74 +336,46 @@ int main()
       {
         fmt::print("New Connection!!\n");
 
+        SendWaitingForGameToStart(*pSession);
+
+        SendGpioDirection(Game, *pSession);
+
         std::lock_guard Lock(Mutex);
 
-        Panels.emplace_back(std::make_unique<st::Panel>(Tree, pSession));
-
-        auto& Panel = *(Panels.back());
-
-        Panel.mGame.SetCurrentRound(0);
-
-        SendGpioDirection(Panel.mGame, pSession);
+        Panels.emplace_back(std::make_unique<st::Panel>(pSession));
       }});
 
   GetGameStart(Mutex, Panels);
 
-  StartGame(Mutex, Panels, CurrentGamePanels);
+  StartGame(Mutex, Game, Panels, CurrentGamePanels);
 
   while(true)
   {
     std::lock_guard Lock(Mutex);
 
+    Game.UpdateCurrentState(Updates);
+
+    const auto Success = Game.GetSuccess();
+
     for (auto& pPanel : CurrentGamePanels)
     {
-      auto& Game = pPanel->mGame;
-
-      auto& pSession = pPanel->mpSession;
-
-      Game.UpdateCurrentState(Updates);
-
-      const auto Success = Game.GetSuccess();
-
-      if (Success.mIsActiveCompleted)
-      {
-        SendReset(Game, pSession);
-
-        Game.Success(true);
-
-        fmt::print("success\n");
-        fmt::print("score = {}\n", Game.GetCurrentScore());
-      }
-
-      if (Success.mInactiveFailCount > 0)
-      {
-        Game.Success(false);
-
-        fmt::print("fail\n");
-        fmt::print("score = {}\n", Game.GetCurrentScore());
-      }
-
-      if (std::chrono::system_clock::now() - Game.GetLastResetTime() > std::chrono::seconds(20))
-      {
-        SendReset(Game, pSession);
-
-        Game.Success(false);
-        fmt::print("fail\n");
-        fmt::print("score = {}\n", Game.GetCurrentScore());
-      }
-
-      const auto CurrentScore = Game.GetCurrentScore();
-
-      if (CurrentScore <= 0)
-      {
-        SendGameOver(CurrentGamePanels);
-      }
-      else if (CurrentScore >= 150)
-      {
-        SendNewRound(CurrentGamePanels);
-      }
+      UpdatePanelWithSuccess(*pPanel, Game, Success);
     }
 
+    const auto CurrentScore = Game.GetCurrentScore();
+
+    if (CurrentScore <= 0)
+    {
+      SendGameOver(CurrentGamePanels, Game);
+
+      return 1;
+    }
+    else if (CurrentScore >= 150)
+    {
+      SendNewRound(CurrentGamePanels, Game);
+    }
+
+    //Remove disconnected Panels
     Panels.erase(
       std::remove_if(
         Panels.begin(),
@@ -380,18 +396,17 @@ int main()
         }),
       CurrentGamePanels.end());
 
-    if (std::chrono::system_clock::now()- gGpioToggle > std::chrono::seconds(1))
+    //Update Game outputs
+    if (std::chrono::system_clock::now()- GpioToggle > 1s)
     {
-      for (auto& pPanel : CurrentGamePanels)
-      {
-        pPanel->mGame.UpdateOutputs();
-      }
+      Game.UpdateOutputs();
 
-      gGpioToggle = std::chrono::system_clock::now();
+      GpioToggle = std::chrono::system_clock::now();
     }
 
-    SendGpioValue(CurrentGamePanels);
+    SendGpioValue(CurrentGamePanels, Game);
 
+    //Get updates from each panel
     Updates.Clear();
 
     for (auto& pPanel : CurrentGamePanels)
@@ -403,6 +418,4 @@ int main()
         });
     }
   }
-
-
 }

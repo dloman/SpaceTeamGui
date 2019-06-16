@@ -12,7 +12,7 @@ namespace
 {
   //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
-  uint64_t GetSerial(const std::string& SerialString)
+  st::SerialId GetSerial(const std::string& SerialString)
   {
     uint64_t Serial;
 
@@ -22,7 +22,7 @@ namespace
 
     Stream >> Serial;
 
-    return Serial;
+    return st::SerialId(Serial);
   }
 
   //----------------------------------------------------------------------------
@@ -66,9 +66,9 @@ namespace
   {
     return st::Output{
       .mPiSerial = GetSerial(Tree.get<std::string>("PiSerial")),
-      .mId = Tree.get<unsigned>("Id"),
+      .mId = st::OutputId(Tree.get<unsigned>("Id")),
       .mCurrentState = false,
-      .mInput = Tree.get<unsigned>("Input")};
+      .mInput = st::ButtonId(Tree.get<unsigned>("Input"))};
   }
 
   //----------------------------------------------------------------------------
@@ -107,9 +107,9 @@ namespace
 
   //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
-  std::unordered_set<uint64_t> GetSerials(boost::property_tree::ptree& Tree)
+  std::unordered_set<st::SerialId> GetSerials(boost::property_tree::ptree& Tree)
   {
-    std::unordered_set<uint64_t> Serials;
+    std::unordered_set<st::SerialId> Serials;
 
     for (const auto& [Label, SubTree]: Tree)
     {
@@ -129,17 +129,18 @@ int Game::mCurrentRound = 0;
 //------------------------------------------------------------------------------
 Game::Game(boost::property_tree::ptree& Tree)
 : mInputs(ConstructInputs(Tree)),
-  moCurrentActiveVariant(std::nullopt),
+  mCurrentActiveVariants(),
   mOutputs(ConstructOutputs(Tree)),
   mPiSerials(GetSerials(Tree)),
-  mLastResetTime(std::chrono::milliseconds(0))
+  mLastResetTime(),
+  mStats()
 {
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-std::vector<std::reference_wrapper<st::InputVariant>> Game::GetNextRoundInputs(
-  const std::vector<uint64_t>& ActivePanelSerialNumbers)
+void Game::GetNextRoundInputs(
+  const std::vector<st::SerialId>& ActivePanelSerialNumbers)
 {
   mCurrentRoundInputs.clear();
 
@@ -174,53 +175,24 @@ std::vector<std::reference_wrapper<st::InputVariant>> Game::GetNextRoundInputs(
       }
     }
 
+    static auto Generator = std::mt19937{std::random_device{}()};
+
     std::sample(
       PanelInputs.begin(),
       PanelInputs.end(),
       std::back_inserter(mCurrentRoundInputs),
       std::min(RoundSizePerPanel, mInputs.size() - mCurrentRoundInputs.size()),
-      std::mt19937{std::random_device{}()});
-  }
-
-  return mCurrentRoundInputs;
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-void Game::SetNextRoundInputs(
-  const std::vector<std::reference_wrapper<InputVariant>>& CurrentRoundInputs)
-{
-  auto GetIdSerial = [] (const auto& InputVariant)
-  {
-    return std::visit(
-      [] (const auto& Input) { return std::make_pair(Input.GetId(), Input.GetPiSerial());},
-      InputVariant);
-  };
-
-  mCurrentRoundInputs.clear();
-
-  for (auto& InputVariant : mInputs)
-  {
-    auto iInputVariant = std::find_if(
-      CurrentRoundInputs.begin(),
-      CurrentRoundInputs.end(),
-      [IdSerial = GetIdSerial(InputVariant), &GetIdSerial] (auto& InputVariant)
-      {
-        return IdSerial == GetIdSerial(InputVariant.get());
-      });
-
-    if (iInputVariant != CurrentRoundInputs.end())
-    {
-      mCurrentRoundInputs.emplace_back(InputVariant);
-    }
+      Generator);
   }
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-std::string Game::GetNextInputDisplay()
+std::string Game::GetNextInputDisplay(st::SerialId Serial)
 {
   auto GetId = [] (auto& InputVariant) {return std::visit([] (auto& Input) { return Input.GetId(); }, InputVariant);};
+
+  auto GetIsActive = [] (auto& InputVariant) {return std::visit([] (auto& Input) { return Input.GetIsActive(); }, InputVariant);};
 
   auto GetNext = [this] { return *std::next(
     mCurrentRoundInputs.begin(),
@@ -228,18 +200,31 @@ std::string Game::GetNextInputDisplay()
 
   auto Next = GetNext();
 
-  if (moCurrentActiveVariant && GetId(moCurrentActiveVariant->get()) == GetId(Next.get()))
+  fmt::print("next selected for Serial {:x} Id = {}\n",
+    Serial.get(),
+    GetId(Next.get()));
+
+  if (auto& ActiveVariant = mCurrentActiveVariants[Serial])
   {
-    return Game::GetNextInputDisplay();
+    fmt::print("prev id = {}\n", GetId(mCurrentActiveVariants[Serial]->get()));
+
+    // prevent input from being selected if its the panels previous input
+    // or selected by antother panel
+    if (
+      GetId(ActiveVariant->get()) == GetId(Next.get()) ||
+      GetIsActive(Next.get()))
+    {
+      return Game::GetNextInputDisplay(Serial);
+    }
   }
 
-  moCurrentActiveVariant = Next;
+  mCurrentActiveVariants[Serial] = Next;
 
-  mLastResetTime = std::chrono::system_clock::now();
+  mLastResetTime[Serial] = std::chrono::system_clock::now();
 
   return std::visit(
-    [] (auto& Input) { return Input.GetNewCommand();},
-    moCurrentActiveVariant->get());
+    [Serial] (auto& Input) { return Input.GetNewCommand(Serial);},
+    mCurrentActiveVariants[Serial]->get());
 }
 
 //------------------------------------------------------------------------------
@@ -279,14 +264,22 @@ st::Success Game::GetSuccess()
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-std::chrono::time_point<std::chrono::system_clock> Game::GetLastResetTime() const
+std::chrono::time_point<std::chrono::system_clock> Game::GetLastResetTime(
+  st::SerialId Serial) const
 {
-  return mLastResetTime;
+  if (mLastResetTime.count(Serial))
+  {
+    return mLastResetTime.at(Serial);
+  }
+
+  using namespace std::chrono_literals;
+
+  return std::chrono::time_point<std::chrono::system_clock>(0s);
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void Game::Success(bool Success)
+void Game::Success(bool Success, st::SerialId)
 {
   if (Success)
   {
@@ -328,7 +321,7 @@ void Game::SetCurrentRound(int Round)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-uint64_t Game::GetHardwareDirection(uint64_t PiSerial) const
+st::HardwareDirection Game::GetHardwareDirection(st::SerialId PiSerial) const
 {
   std::bitset<64> Bits(std::numeric_limits<uint64_t>::max());
 
@@ -336,16 +329,16 @@ uint64_t Game::GetHardwareDirection(uint64_t PiSerial) const
   {
     if (Output.mPiSerial == PiSerial)
     {
-      Bits[Output.mId] = false;
+      Bits[Output.mId.get()] = false;
     }
   }
 
-  return Bits.to_ullong();
+  return st::HardwareDirection(Bits.to_ullong());
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-uint64_t Game::GetHardwareValue(uint64_t PiSerial) const
+st::HardwareValue Game::GetHardwareValue(st::SerialId PiSerial) const
 {
   std::bitset<64> Bits(std::numeric_limits<uint64_t>::max());
 
@@ -353,16 +346,16 @@ uint64_t Game::GetHardwareValue(uint64_t PiSerial) const
   {
     if (Output.mPiSerial == PiSerial)
     {
-      Bits[Output.mId] = Output.mCurrentState;
+      Bits[Output.mId.get()] = Output.mCurrentState;
     }
   }
 
-  return Bits.to_ullong();
+  return st::HardwareValue(Bits.to_ullong());
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-const std::unordered_set<uint64_t>& Game::GetPiSerials() const
+const std::unordered_set<st::SerialId>& Game::GetPiSerials() const
 {
   return mPiSerials;
 }
@@ -407,3 +400,11 @@ size_t Game::GetRoundSizePerPanel()
 {
   return 5 + (2 * (mCurrentRound / 3));
 }
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+std::vector<std::reference_wrapper<st::InputVariant>> Game::GetCurrentRoundInputs() const
+{
+  return mCurrentRoundInputs;
+}
+

@@ -1,7 +1,8 @@
 #include <SpaceTeam/Game.hpp>
 #include <SpaceTeam/Update.hpp>
+#include <SpaceTeam/Id.hpp>
 #include <Utility/Visitor.hpp>
-#include <Utility/XmlAssembler.hpp>
+#include <Utility/JsonAssembler.hpp>
 #include <imgui.h>
 #include <imgui-SFML.h>
 
@@ -18,7 +19,7 @@
 using namespace std::literals;
 
 int gCurrentIndex = 0;
-st::XmlAssembler gXmlPacketAssembler;
+st::JsonAssembler gJsonPacketAssembler;
 
 std::unique_ptr<dl::tcp::Client<dl::tcp::Session>> gpClient;
 
@@ -27,7 +28,7 @@ ImFont* gpFont20;
 ImFont* gpFont30;
 
 std::vector<std::string> gSerials;
-std::string gActionText;
+std::string gActionText = "Attempting to Connect";
 
 namespace
 {
@@ -64,11 +65,11 @@ namespace
 
   //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
-  unsigned GetLedId(unsigned Id, const st::Game& Game)
+  st::OutputId GetLedId(st::ButtonId Id, st::SerialId Serial, const st::Game& Game)
   {
     for(const auto& Output : Game.GetOutputs())
     {
-      if (Output.mInput == Id)
+      if (Output.mInput == Id && Output.mPiSerial == Serial)
       {
         return Output.mId;
       }
@@ -78,7 +79,7 @@ namespace
 
   //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
-  uint64_t GetSerial(const std::string& SerialString)
+  st::SerialId GetSerial(const std::string& SerialString)
   {
     uint64_t Serial;
 
@@ -88,7 +89,7 @@ namespace
 
     Stream >> Serial;
 
-    return Serial;
+    return st::SerialId(Serial);
   }
 }
 
@@ -98,13 +99,13 @@ namespace sim
 {
   struct Analog
   {
-    const uint64_t mPiSerial;
+    const st::SerialId mPiSerial;
 
     const std::string mLabel;
 
-    const unsigned mId;
+    const st::ButtonId mId;
 
-    const unsigned mLedId;
+    const st::OutputId mLedId;
 
     uint8_t mState;
 
@@ -130,7 +131,7 @@ namespace sim
     //--------------------------------------------------------------------------
     st::Update GetUpdate()
     {
-      return st::Update{.mPiSerial=mPiSerial, .mId=mId, .mValue = 0};
+      return st::Update{.mPiSerial = mPiSerial, .mId = mId, .mValue = 0};
     }
   };
 
@@ -138,7 +139,7 @@ namespace sim
   //----------------------------------------------------------------------------
   struct Digital
   {
-    const uint64_t mPiSerial;
+    const st::SerialId mPiSerial;
 
     const std::string mLabel;
 
@@ -146,9 +147,9 @@ namespace sim
 
     const std::string mOffLabel;
 
-    const unsigned mId;
+    const st::ButtonId mId;
 
-    const unsigned mLedId;
+    const st::OutputId mLedId;
 
     int mState;
 
@@ -182,7 +183,7 @@ namespace sim
     //--------------------------------------------------------------------------
     st::Update GetUpdate()
     {
-      return st::Update{.mPiSerial=mPiSerial, .mId=mId, .mValue = 0};
+      return st::Update{.mPiSerial=mPiSerial, .mId = mId, .mValue = 0};
     }
   };
 
@@ -190,13 +191,13 @@ namespace sim
   //----------------------------------------------------------------------------
   struct Momentary
   {
-    const uint64_t mPiSerial;
+    const st::SerialId mPiSerial;
 
     const std::string mMessage;
 
-    const unsigned mId;
+    const st::ButtonId mId;
 
-    const unsigned mLedId;
+    const st::OutputId mLedId;
 
     const bool mDefaultValue;
 
@@ -309,7 +310,7 @@ void SendState(std::vector<DrawVariant>& Things)
           return;
         }
 
-        DigitalOutput[Input.mId] = Input.mState;
+        DigitalOutput[Input.mId.get()] = Input.mState;
       }},
       DrawVariant);
   }
@@ -331,7 +332,7 @@ int main(int argc, char** argv)
 
   for (const auto PiSerial : Game.GetPiSerials())
   {
-    gSerials.emplace_back(fmt::format("{:x}", PiSerial));
+    gSerials.emplace_back(fmt::format("{:x}", PiSerial.get()));
   }
 
   std::vector<DrawVariant> Things;
@@ -344,8 +345,8 @@ int main(int argc, char** argv)
         Things.emplace_back(sim::Analog{
           .mPiSerial=Input.GetPiSerial(),
           .mLabel=Input.GetLabel(),
-          .mId=Input.GetId(),
-          .mLedId = GetLedId(Input.GetId(), Game),
+          .mId= Input.GetId(),
+          .mLedId = GetLedId(Input.GetId(), Input.GetPiSerial(), Game),
           .mState = 0,
           .mIsActive = false});
       },
@@ -357,7 +358,7 @@ int main(int argc, char** argv)
           .mOnLabel = Input.GetOnLabel(),
           .mOffLabel = Input.GetOffLabel(),
           .mId = Input.GetId(),
-          .mLedId = GetLedId(Input.GetId(), Game),
+          .mLedId = GetLedId(Input.GetId(), Input.GetPiSerial(), Game),
           .mState = 0,
           .mIsActive = false});
       },
@@ -367,7 +368,7 @@ int main(int argc, char** argv)
           .mPiSerial = Input.GetPiSerial(),
           .mMessage = Input.GetMessage(),
           .mId = Input.GetId(),
-          .mLedId = GetLedId(Input.GetId(), Game),
+          .mLedId = GetLedId(Input.GetId(), Input.GetPiSerial(), Game),
           .mDefaultValue = Input.GetDefaultValue(),
           .mState = Input.GetDefaultValue(),
           .mIsActive = false});
@@ -375,58 +376,69 @@ int main(int argc, char** argv)
       InputVariant);
   }
 
-  gXmlPacketAssembler.GetSignalPacket().Connect(
+  gJsonPacketAssembler.GetSignalPacket().Connect(
   [&Things] (const auto& Bytes)
   {
+    boost::property_tree::ptree Tree;
+
+    std::stringstream Stream(Bytes);
+
     try
     {
-      boost::property_tree::ptree Tree;
-
-      std::stringstream Stream(Bytes);
-
-      fmt::print("{}\n ", Bytes);
-
       boost::property_tree::read_json(Stream, Tree);
-
-      if (const auto oText = Tree.get_optional<std::string>("reset"))
-      {
-        gActionText = *oText;
-
-        return;
-      }
-
-      const auto Serial = Tree.get<uint64_t>("PiSerial");
-
-      const auto LedValues = std::bitset<64>(Tree.get<uint64_t>("gpioValue"));
-
-      for(auto& DrawVariant : Things)
-      {
-        std::visit(st::Visitor{
-          [&Serial, &LedValues] (auto& Input)
-          {
-            if (Serial != GetSerial(gSerials[gCurrentIndex]))
-            {
-              return;
-            }
-
-            Input.mIsActive = !LedValues[Input.mLedId];
-          }},
-          DrawVariant);
-      }
     }
     catch (...)
     {
+      fmt::print("Error {} \n", Bytes);
+      return;
+    }
+
+    if (const auto oText = Tree.get_optional<std::string>("reset"))
+    {
+      gActionText = *oText;
+
+      fmt::print("{}\n ", Bytes);
+
+      return;
+    }
+
+    if (const auto oSerial = Tree.get_optional<uint64_t>("PiSerial"))
+    {
+      const auto Serial = st::SerialId(*oSerial);
+
+      if (auto oLedValues = Tree.get_optional<uint64_t>("gpioValue"))
+      {
+        const auto LedValues = std::bitset<64>(*oLedValues);
+
+        for(auto& DrawVariant : Things)
+        {
+          std::visit(st::Visitor{
+            [&Serial, LedValues] (auto& Input)
+            {
+              if (Serial != GetSerial(gSerials[gCurrentIndex]))
+              {
+                return;
+              }
+
+              Input.mIsActive = !LedValues[Input.mLedId.get()];
+            }},
+            DrawVariant);
+        }
+      }
+      return;
     }
   });
 
-
-
+  if (argc > 1)
+  {
+    gCurrentIndex = std::atoi(argv[1]);
+  }
 
   const auto Hostname = [&]
     {
-      if(argc == 2)
+      if(argc == 3)
       {
-        return std::string(argv[1]);
+        return std::string(argv[2]);
       }
       return std::string("localhost");
     }();
@@ -434,7 +446,7 @@ int main(int argc, char** argv)
   gpClient = std::make_unique<dl::tcp::Client<dl::tcp::Session>>(
     dl::tcp::ClientSettings<dl::tcp::Session>{
       .mHostname = Hostname,
-      .mOnRxCallback = [] (const auto& Bytes) { gXmlPacketAssembler.Add(Bytes);},
+      .mOnRxCallback = [] (const auto& Bytes) { gJsonPacketAssembler.Add(Bytes);},
       .mConnectionCallback = [] (const auto&) { fmt::print("connected\n");}});
   //.mConnectionErrorCallback = OnError});
 

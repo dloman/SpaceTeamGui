@@ -17,9 +17,9 @@ Momentary::Momentary(const boost::property_tree::ptree& Tree)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-const std::string& Momentary::GetNewCommand()
+const std::string& Momentary::GetNewCommand(st::SerialId Serial)
 {
-  mIsActive = true;
+  mIsActive = Serial;
 
   using namespace std::chrono;
 
@@ -61,9 +61,9 @@ void Momentary::IsCorrect(st::Success& Success)
     {
       mLastToggle = system_clock::now();
 
-      mIsActive = false;
+      mIsActive = std::nullopt;
 
-      Success.mIsActiveCompleted = true;
+      Success.mIsActiveCompleted.insert(mPiSerial);
     }
 
     return;

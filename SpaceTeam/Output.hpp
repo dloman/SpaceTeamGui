@@ -1,15 +1,17 @@
 #pragma once
 
+#include <SpaceTeam/Id.hpp>
+
 namespace st
 {
   struct Output
   {
-    const uint64_t mPiSerial;
+    const st::SerialId mPiSerial;
 
-    const unsigned mId;
+    const st::OutputId mId;
 
     bool mCurrentState;
 
-    const unsigned mInput;
+    const st::ButtonId mInput;
   };
 }

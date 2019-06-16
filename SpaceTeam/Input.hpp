@@ -1,6 +1,8 @@
 #pragma once
 
+
 #include <boost/property_tree/ptree.hpp>
+#include <SpaceTeam/Id.hpp>
 
 namespace st
 {
@@ -8,24 +10,24 @@ namespace st
   {
     public:
 
-      unsigned GetId() const;
+      st::ButtonId GetId() const;
 
-      uint64_t GetPiSerial() const;
+      st::SerialId GetPiSerial() const;
 
       const std::string& GetLabel() const;
 
-      bool GetIsActive() const;
+      std::optional<SerialId> GetIsActive() const;
 
     protected:
 
       Input(const boost::property_tree::ptree& Tree);
 
-      const uint64_t mPiSerial;
+      const st::SerialId mPiSerial;
 
-      const unsigned mId;
+      const st::ButtonId mId;
 
       const std::string mLabel;
 
-      bool mIsActive;
+      std::optional<st::SerialId> mIsActive;
   };
 }

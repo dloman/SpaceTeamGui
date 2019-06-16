@@ -1,10 +1,12 @@
 #pragma once
 
+#include <unordered_set>
+
 namespace st
 {
   struct Success
   {
-    bool mIsActiveCompleted = false;
+    std::unordered_set<st::SerialId> mIsActiveCompleted;
 
     unsigned mInactiveFailCount = 0;
   };

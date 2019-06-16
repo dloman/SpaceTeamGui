@@ -14,7 +14,7 @@ namespace st
 
       Momentary(const boost::property_tree::ptree& Tree);
 
-      const std::string& GetNewCommand();
+      const std::string& GetNewCommand(st::SerialId);
 
       void IsCorrect(st::Success&);
 

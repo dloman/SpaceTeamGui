@@ -4,7 +4,7 @@ using st::Input;
 
 namespace
 {
-  uint64_t GetSerial(const std::string& SerialString)
+  st::SerialId GetSerial(const std::string& SerialString)
   {
     uint64_t Serial;
 
@@ -14,7 +14,7 @@ namespace
 
     Stream >> Serial;
 
-    return Serial;
+    return st::SerialId(Serial);
   }
 }
 
@@ -24,20 +24,20 @@ Input::Input(const boost::property_tree::ptree& Tree)
 : mPiSerial(GetSerial(Tree.get<std::string>("PiSerial"))),
   mId(Tree.get<unsigned>("Id")),
   mLabel(Tree.get<std::string>("Label")),
-  mIsActive(false)
+  mIsActive(std::nullopt)
 {
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-unsigned Input::GetId() const
+st::ButtonId Input::GetId() const
 {
   return mId;
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-uint64_t Input::GetPiSerial() const
+st::SerialId Input::GetPiSerial() const
 {
   return mPiSerial;
 }
@@ -51,7 +51,7 @@ const std::string& Input::GetLabel() const
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool Input::GetIsActive() const
+std::optional<st::SerialId> Input::GetIsActive() const
 {
   return mIsActive;
 }

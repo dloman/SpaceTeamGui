@@ -7,7 +7,7 @@
 #include <SpaceTeam/Game.hpp>
 #include <SpaceTeam/Success.hpp>
 #include <Utility/Random.hpp>
-#include <Utility/XmlAssembler.hpp>
+#include <Utility/JsonAssembler.hpp>
 
 #include <Tcp/Client.hpp>
 
@@ -104,7 +104,7 @@ ImFont* gpFont30;
 
 static const ImVec2 PlotSize = {263, 69};
 
-st::XmlAssembler gXmlPacketAssembler;
+st::JsonAssembler gJsonPacketAssembler;
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 void DoDigital()
@@ -352,7 +352,7 @@ std::string GetState()
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void OnXmlPacket(const std::string& Bytes)
+void OnJsonPacket(const std::string& Bytes)
 {
   std::istringstream Stream(Bytes);
 
@@ -401,7 +401,7 @@ void OnXmlPacket(const std::string& Bytes)
 //------------------------------------------------------------------------------
 void OnRx(const std::string& Bytes)
 {
-  gXmlPacketAssembler.Add(Bytes);
+  gJsonPacketAssembler.Add(Bytes);
 }
 
 //------------------------------------------------------------------------------
@@ -416,8 +416,8 @@ void OnError(const std::string& Error)
 //------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-  gXmlPacketAssembler.GetSignalPacket().Connect(
-    [] (const auto& Bytes) { OnXmlPacket(Bytes); });
+  gJsonPacketAssembler.GetSignalPacket().Connect(
+    [] (const auto& Bytes) { OnJsonPacket(Bytes); });
 
   const auto Hostname = [&]
     {

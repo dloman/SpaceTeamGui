@@ -13,7 +13,7 @@ namespace st
 
       Digital(const boost::property_tree::ptree& Tree);
 
-      std::string GetNewCommand();
+      std::string GetNewCommand(st::SerialId);
 
       void IsCorrect(st::Success&);
 

@@ -54,9 +54,13 @@ if(BUILD_RPI)
   include_directories(Modules/DanLib/Utility)
   include_directories(Modules/DanLib/Robot)
 else()
-  find_package(DanLib REQUIRED)
+  include_directories(Modules/asio/asio/include)
 
-  include_directories(${DanLib_INCLUDE_DIR})
+  add_subdirectory(Modules/DanLib EXCLUDE_FROM_ALL)
+
+  include_directories(Modules/DanLib/Tcp)
+  include_directories(Modules/DanLib/Utility)
+  include_directories(Modules/DanLib/Robot)
 endif()
 
 
@@ -72,6 +76,7 @@ include_directories(Modules/imgui)
 include_directories(Modules/imgui-sfml)
 add_subdirectory(Modules/fmt)
 include_directories(Modules/fmt/include)
+include_directories(Modules)
 
 include_directories(.)
 
@@ -106,7 +111,7 @@ add_library(
 
 add_library(
   SpaceTeamUtility
-  Utility/XmlAssembler.cpp
+  Utility/JsonAssembler.cpp
   )
 
 if(BUILD_RPI)
@@ -137,24 +142,24 @@ target_link_libraries(
 
 
 add_executable(
-  SpaceTeamServer
+  Server
   Server/Server.cpp
   )
 
 target_link_libraries(
-  SpaceTeamServer
+  Server
   SpaceTeam
   DanLibTcp
   ${CMAKE_THREAD_LIBS_INIT}
   )
 
 add_executable(
-  SpaceTeamGui
+  Gui
   Gui/Main.cpp
   )
 
 target_link_libraries(
-  SpaceTeamGui
+  Gui
   SpaceTeam
   SpaceTeamUtility
   SpaceTeamHardware
@@ -166,12 +171,12 @@ target_link_libraries(
   )
 
 add_executable(
-  GuiSimulator
+  Simulator
   Simulator/Simulator.cpp
   )
 
 target_link_libraries(
-  GuiSimulator
+  Simulator
   SpaceTeam
   SpaceTeamUtility
   imgui-sfml
@@ -182,12 +187,12 @@ target_link_libraries(
   )
 
 add_executable(
-  SpaceTeamSetup
+  ConfigFileGenerator
   Setup/Setup.cpp
   )
 
 target_link_libraries(
-  SpaceTeamSetup
+  ConfigFileGenerator
   SpaceTeamHardware
   fmt::fmt
   )

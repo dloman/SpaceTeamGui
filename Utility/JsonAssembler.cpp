@@ -1,10 +1,10 @@
-#include "XmlAssembler.hpp"
+#include "JsonAssembler.hpp"
 
-using st::XmlAssembler;
+using st::JsonAssembler;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void XmlAssembler::Add(const std::string& Bytes)
+void JsonAssembler::Add(const std::string& Bytes)
 {
   mBytes += Bytes;
 
@@ -14,7 +14,7 @@ void XmlAssembler::Add(const std::string& Bytes)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void XmlAssembler::Check()
+void JsonAssembler::Check()
 {
   while (!mBytes.empty() && mBytes[0] != '{')
   {
@@ -53,7 +53,7 @@ void XmlAssembler::Check()
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-const dl::Signal<const std::string&>& XmlAssembler::GetSignalPacket() const
+const dl::Signal<const std::string&>& JsonAssembler::GetSignalPacket() const
 {
   return mSignalPacket;
 }

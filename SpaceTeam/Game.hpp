@@ -3,6 +3,7 @@
 #include <SpaceTeam/Digital.hpp>
 #include <SpaceTeam/Momentary.hpp>
 #include <SpaceTeam/Output.hpp>
+#include <SpaceTeam/Id.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <variant>
 #include <vector>
@@ -21,13 +22,13 @@ namespace st
 
       Game(boost::property_tree::ptree& Tree);
 
-      std::string GetNextInputDisplay();
+      std::string GetNextInputDisplay(st::SerialId);
 
       void UpdateCurrentState(st::UpdateVec& Updates);
 
       st::Success GetSuccess();
 
-      std::chrono::time_point<std::chrono::system_clock> GetLastResetTime() const;
+      std::chrono::time_point<std::chrono::system_clock> GetLastResetTime(st::SerialId) const;
 
       int GetCurrentScore() const;
 
@@ -37,25 +38,24 @@ namespace st
 
       void SetCurrentRound(int);
 
-      void Success(bool Success);
+      void Success(bool Success, st::SerialId Serial);
 
-      std::vector<std::reference_wrapper<st::InputVariant>> GetNextRoundInputs(
-        const std::vector<uint64_t>& ActivePanelSerialNumbers);
+      void GetNextRoundInputs(
+        const std::vector<st::SerialId>& ActivePanelSerialNumbers);
 
-      void SetNextRoundInputs(
-        const std::vector<std::reference_wrapper<st::InputVariant>>& CurrentRoundInputs);
+      st::HardwareDirection GetHardwareDirection(st::SerialId PiSerial) const;
 
-      uint64_t GetHardwareDirection(uint64_t PiSerial) const;
+      st::HardwareValue GetHardwareValue(st::SerialId PiSerial) const;
 
-      uint64_t GetHardwareValue(uint64_t PiSerial) const;
-
-      const std::unordered_set<uint64_t>& GetPiSerials() const;
+      const std::unordered_set<st::SerialId>& GetPiSerials() const;
 
       void UpdateOutputs();
 
       const std::vector<st::InputVariant>& GetInputs() const;
 
       const std::vector<st::Output>& GetOutputs() const;
+
+      std::vector<std::reference_wrapper<st::InputVariant>> GetCurrentRoundInputs() const;
 
     private:
 
@@ -65,15 +65,17 @@ namespace st
 
       std::vector<st::InputVariant> mInputs;
 
-      std::optional<std::reference_wrapper<InputVariant>> moCurrentActiveVariant;
+      std::unordered_map<st::SerialId, std::optional<std::reference_wrapper<InputVariant>>> mCurrentActiveVariants;
 
       std::vector<st::Output> mOutputs;
 
-      const std::unordered_set<uint64_t> mPiSerials;
+      const std::unordered_set<st::SerialId> mPiSerials;
 
       std::vector<std::reference_wrapper<InputVariant>> mCurrentRoundInputs;
 
-      std::chrono::time_point<std::chrono::system_clock> mLastResetTime;
+      std::unordered_map<st::SerialId, std::chrono::time_point<std::chrono::system_clock>> mLastResetTime;
+
+      const std::unordered_map<st::SerialId, int> mStats;
 
       static int mCurrentScore;
 

@@ -1,5 +1,6 @@
 #include "Panel.hpp"
 #include <HardwareInterface/Types.hpp>
+#include <SpaceTeam/Id.hpp>
 
 #include <Tcp/Session.hpp>
 #include <fmt/format.h>
@@ -7,24 +8,14 @@
 
 using st::Panel;
 
-//namespace
-//{
-  //----------------------------------------------------------------------------
-  //----------------------------------------------------------------------------
-  void OnConnectionError(const std::string& Error)
-  {
-    std::cerr << "Error: " << Error << std::endl;
-  }
-//}
+size_t st::Panel::mCount = 0;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-Panel::Panel(
-  boost::property_tree::ptree& Tree,
-  std::shared_ptr<dl::tcp::Session>& pSession)
-: mGame(Tree),
-  mpSession(pSession),
+Panel::Panel(std::shared_ptr<dl::tcp::Session>& pSession)
+: mpSession(pSession),
   mUpdates(),
+  mId(mCount++),
   mIsConnected(true),
   moSerial(std::nullopt)
 {
@@ -46,7 +37,7 @@ Panel::Panel(
         {
           std::lock_guard Lock(mMutex);
 
-          moSerial = Serial;
+          moSerial = st::SerialId(Serial);
         }
 
         uint64_t Data;
@@ -58,14 +49,14 @@ Panel::Panel(
         for (unsigned i = 0; i < 40; ++i)
         {
           mUpdates.Add(st::Update{
-            .mPiSerial = Serial,
-            .mId = i,
+            .mPiSerial = st::SerialId(Serial),
+            .mId = st::ButtonId(i),
             .mValue = static_cast<uint8_t>(Bits[i])});
         }
       }
       else if (static_cast<eDeviceID>(Bytes[0]) == eDeviceID::eAnalog)
       {
-        uint64_t Serial;
+        st::SerialId Serial;
 
         std::memcpy(&Serial, Bytes.data() + 1, 8);
 
@@ -79,20 +70,13 @@ Panel::Panel(
 
         std::memcpy(Data.data(), Bytes.data() + 9, 8);
 
-        //fmt::print("Data = ");
-
-        //fmt::print("Data = {},{},{}\n", Data[27], Data[28], Data[29]);
-
         for (unsigned i = 0; i < 32; ++i)
         {
           mUpdates.Add(st::Update{
             .mPiSerial = Serial,
-            .mId = i,
+            .mId = st::ButtonId(i),
             .mValue = Data[i]});
-
-          //fmt::print("{},", Data[i]);
         }
-        //fmt::print("\n");
       }
     });
 }
@@ -106,7 +90,7 @@ bool Panel::GetIsConnected() const
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-std::optional<uint64_t> Panel::GetSerial() const
+std::optional<st::SerialId> Panel::GetSerial() const
 {
   std::lock_guard Lock(mMutex);
 
