@@ -55,3 +55,10 @@ std::optional<st::SerialId> Input::GetIsActive() const
 {
   return mIsActive;
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void Input::ClearActive()
+{
+  mIsActive = std::nullopt;
+}

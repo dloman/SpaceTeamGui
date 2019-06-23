@@ -135,15 +135,22 @@ void SendNewRound(std::vector<observer_ptr<st::Panel>>& Panels, st::Game& Game)
 
     pPanel->mpSession->Write(Stream.str());
   }
+
+  std::this_thread::sleep_for(15s);
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void SendReset(st::Game& Game, st::Panel& Panel)
+void SendReset(st::Game& Game, st::Panel& Panel, std::string Value = "")
 {
   boost::property_tree::ptree Tree;
 
-  Tree.put("reset", Game.GetNextInputDisplay(*(Panel.GetSerial())));
+  if (Value.empty())
+  {
+    Value = Game.GetNextInputDisplay(*(Panel.GetSerial()));
+  }
+
+  Tree.put("reset", Value);
 
   std::stringstream Stream;
 
@@ -275,7 +282,7 @@ void StartGame(
 
   for(const auto& pPanel : Panels)
   {
-    SendReset(Game, *pPanel);
+    SendReset(Game, *pPanel, Game.GetInitialInputDisplay(*pPanel->GetSerial()));
   }
 }
 
@@ -402,7 +409,7 @@ int main()
       CurrentGamePanels.end());
 
     //Update Game outputs
-    if (std::chrono::system_clock::now()- GpioToggle > 1s)
+    if (std::chrono::system_clock::now() - GpioToggle > 1s)
     {
       Game.UpdateOutputs();
 

@@ -27,19 +27,6 @@ namespace
 
   //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
-  size_t GetRandomInputIndex(size_t Size)
-  {
-    static std::random_device RandomDevice;
-
-    static std::mt19937 Generator(RandomDevice());
-
-    std::uniform_int_distribution<> Distribution(0, Size - 1);
-
-    return Distribution(Generator);
-  }
-
-  //----------------------------------------------------------------------------
-  //----------------------------------------------------------------------------
   st::InputVariant GetInput(const boost::property_tree::ptree& Tree)
   {
     const auto Type = Tree.get<std::string>("Type");
@@ -190,41 +177,116 @@ void Game::GetNextRoundInputs(
 //------------------------------------------------------------------------------
 std::string Game::GetNextInputDisplay(st::SerialId Serial)
 {
-  auto GetId = [] (auto& InputVariant) {return std::visit([] (auto& Input) { return Input.GetId(); }, InputVariant);};
-
-  auto GetIsActive = [] (auto& InputVariant) {return std::visit([] (auto& Input) { return Input.GetIsActive(); }, InputVariant);};
-
-  auto GetNext = [this] { return *std::next(
-    mCurrentRoundInputs.begin(),
-    GetRandomInputIndex(mCurrentRoundInputs.size()));};
-
-  auto Next = GetNext();
-
-  fmt::print("next selected for Serial {:x} Id = {}\n",
-    Serial.get(),
-    GetId(Next.get()));
-
-  if (auto& ActiveVariant = mCurrentActiveVariants[Serial])
+  auto IsCurrentlyUsed = [] (auto& InputVariant, auto& CurrentVariant)
   {
-    fmt::print("prev id = {}\n", GetId(mCurrentActiveVariants[Serial]->get()));
-
-    // prevent input from being selected if its the panels previous input
-    // or selected by antother panel
-    if (
-      GetId(ActiveVariant->get()) == GetId(Next.get()) ||
-      GetIsActive(Next.get()))
+    auto GetId = [] (auto& Variant)
     {
-      return Game::GetNextInputDisplay(Serial);
+      return std::visit([] (auto& Input) { return Input.GetId(); }, Variant);
+    };
+
+    auto GetIsActive = [] (auto& Variant)
+    {
+      return std::visit([] (auto& Input) { return Input.GetIsActive(); }, Variant);
+    };
+
+    return (GetIsActive(InputVariant) || GetId(InputVariant) == GetId(CurrentVariant));
+  };
+
+  std::vector<std::reference_wrapper<InputVariant>> RandomCurrentRoundInputs;
+
+  static auto Generator = std::mt19937{std::random_device{}()};
+
+  std::sample(
+    mCurrentRoundInputs.begin(),
+    mCurrentRoundInputs.end(),
+    std::back_inserter(RandomCurrentRoundInputs),
+    mCurrentRoundInputs.size(),
+    Generator);
+
+  auto& CurrentActiveInput = mCurrentActiveVariants[Serial]->get();
+
+  for (auto& rInputVariant : RandomCurrentRoundInputs)
+  {
+    if (!IsCurrentlyUsed(rInputVariant.get(), CurrentActiveInput))
+    {
+      mCurrentActiveVariants[Serial] = rInputVariant;
+
+      mLastResetTime[Serial] = std::chrono::system_clock::now();
+
+      return std::visit(
+        [Serial] (auto& Input) { return Input.GetNewCommand(Serial);},
+        mCurrentActiveVariants[Serial]->get());
     }
   }
 
-  mCurrentActiveVariants[Serial] = Next;
+  for (auto& rInputVariant : RandomCurrentRoundInputs)
+  {
+    auto GetId = [] (auto& Variant)
+    {
+      return std::visit([] (auto& Input) { return Input.GetId(); }, Variant);
+    };
 
-  mLastResetTime[Serial] = std::chrono::system_clock::now();
+    auto GetName = [] (auto& Variant)
+    {
+      return std::visit([] (auto& Input) { return Input.GetLabel(); }, Variant);
+    };
 
-  return std::visit(
-    [Serial] (auto& Input) { return Input.GetNewCommand(Serial);},
-    mCurrentActiveVariants[Serial]->get());
+    auto GetIsActive = [] (auto& Variant)
+    {
+      if (std::visit([] (auto& Input) { return Input.GetIsActive(); }, Variant))
+      {
+        return true;
+      }
+      return false;
+    };
+
+    fmt::print("IsCurrentlyUsed = {}, id = {}, isActive {}, name {}\n",
+      IsCurrentlyUsed(rInputVariant.get(), CurrentActiveInput),
+      GetId(rInputVariant.get()),
+      static_cast<bool>(GetIsActive(rInputVariant.get())),
+      GetName(rInputVariant.get()));
+  }
+
+
+
+  throw std::logic_error("unreachable");
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+std::string Game::GetInitialInputDisplay(st::SerialId Serial)
+{
+  auto IsActive = [] (auto& Variant)
+  {
+    return std::visit([] (auto& Input) { return Input.GetIsActive(); }, Variant);
+  };
+
+  std::vector<std::reference_wrapper<InputVariant>> RandomCurrentRoundInputs;
+
+  static auto Generator = std::mt19937{std::random_device{}()};
+
+  std::sample(
+    mCurrentRoundInputs.begin(),
+    mCurrentRoundInputs.end(),
+    std::back_inserter(RandomCurrentRoundInputs),
+    mCurrentRoundInputs.size(),
+    Generator);
+
+  for (auto& rInputVariant : RandomCurrentRoundInputs)
+  {
+    if (!IsActive(rInputVariant.get()))
+    {
+      mCurrentActiveVariants[Serial] = rInputVariant;
+
+      mLastResetTime[Serial] = std::chrono::system_clock::now();
+
+      return std::visit(
+        [Serial] (auto& Input) { return Input.GetNewCommand(Serial);},
+        mCurrentActiveVariants[Serial]->get());
+    }
+  }
+
+  throw std::logic_error("unreachable");
 }
 
 //------------------------------------------------------------------------------

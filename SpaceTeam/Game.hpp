@@ -24,6 +24,8 @@ namespace st
 
       Game(boost::property_tree::ptree& Tree);
 
+      std::string GetInitialInputDisplay(st::SerialId);
+
       std::string GetNextInputDisplay(st::SerialId);
 
       void UpdateCurrentState(st::UpdateVec& Updates);

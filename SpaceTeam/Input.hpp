@@ -18,6 +18,8 @@ namespace st
 
       std::optional<SerialId> GetIsActive() const;
 
+      void ClearActive();
+
     protected:
 
       Input(const boost::property_tree::ptree& Tree);
