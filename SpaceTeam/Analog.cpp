@@ -87,9 +87,9 @@ void Analog::IsCorrect(st::Success& Success)
   {
     if (IsInCorrectState())
     {
-      mIsActive = std::nullopt;
+      Success.mIsActiveCompleted.insert(*mIsActive);
 
-      Success.mIsActiveCompleted.insert(mPiSerial);
+      mIsActive = std::nullopt;
     }
 
     return;

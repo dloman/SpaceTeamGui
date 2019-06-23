@@ -61,9 +61,9 @@ void Momentary::IsCorrect(st::Success& Success)
     {
       mLastToggle = system_clock::now();
 
-      mIsActive = std::nullopt;
+      Success.mIsActiveCompleted.insert(*mIsActive);
 
-      Success.mIsActiveCompleted.insert(mPiSerial);
+      mIsActive = std::nullopt;
     }
 
     return;
