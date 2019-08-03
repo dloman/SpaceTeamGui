@@ -36,6 +36,7 @@ bool Momentary::WasPressed()
 
   for (const bool State : Updates)
   {
+
     if (State != mDefaultValue)
     {
       return true;
@@ -65,6 +66,8 @@ void Momentary::IsCorrect(st::Success& Success)
 
       mIsActive = std::nullopt;
     }
+
+    mUpdates.clear();
 
     return;
   }

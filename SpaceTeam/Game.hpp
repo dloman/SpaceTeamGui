@@ -9,6 +9,11 @@
 #include <vector>
 #include <unordered_set>
 
+namespace dl::tcp
+{
+  class Session;
+}
+
 namespace st
 {
   using InputVariant = std::variant<st::Analog, st::Digital, st::Momentary>;
@@ -16,23 +21,16 @@ namespace st
   constexpr int StartingScore = 100;
 
   struct Success;
+  class Panel;
   class UpdateVec;
 
   class Game
   {
     public:
 
-      Game(boost::property_tree::ptree& Tree);
-
-      std::string GetInitialInputDisplay(st::SerialId);
-
-      std::string GetNextInputDisplay(st::SerialId);
+      Game(boost::property_tree::ptree& Tree, const std::vector<std::unique_ptr<st::Panel>>& Panels);
 
       void UpdateCurrentState(st::UpdateVec& Updates);
-
-      st::Success GetSuccess();
-
-      std::chrono::time_point<std::chrono::system_clock> GetLastResetTime(st::SerialId) const;
 
       int GetCurrentScore() const;
 
@@ -42,30 +40,50 @@ namespace st
 
       void SetCurrentRound(int);
 
-      void Success(bool Success, st::SerialId Serial);
+      void SendNewRound();
 
-      void GetNextRoundInputs(
-        const std::vector<st::SerialId>& ActivePanelSerialNumbers);
+      const std::vector<st::Output>& GetOutputs() const;
+
+      const std::unordered_set<st::SerialId>& GetPiSerials() const;
+
+      const std::vector<st::InputVariant>& GetInputs() const;
+
+    private:
+
+      void GetInitialInputDisplays();
+
+      std::string GetNextInputDisplay(st::SerialId);
+
+      std::chrono::time_point<std::chrono::system_clock> GetLastResetTime(st::SerialId) const;
+
+      void GetNextRoundInputs();
 
       st::HardwareDirection GetHardwareDirection(st::SerialId PiSerial) const;
 
       st::HardwareValue GetHardwareValue(st::SerialId PiSerial) const;
 
-      const std::unordered_set<st::SerialId>& GetPiSerials() const;
-
       void UpdateOutputs();
-
-      const std::vector<st::InputVariant>& GetInputs() const;
-
-      const std::vector<st::Output>& GetOutputs() const;
 
       std::vector<std::reference_wrapper<st::InputVariant>> GetCurrentRoundInputs() const;
 
-    private:
+      void GetInitialInputDisplay(st::SerialId);
+
+      st::Success GetSuccess();
+
+      void UpdateScore(bool Success);
 
       size_t GetRoundSizePerPanel();
 
       double GetCurrentState(const InputVariant& Input);
+
+      void SendGpioDirections();
+
+      void SendGpioValues();
+
+      void SendReset(
+        st::SerialId SerialId,
+        dl::tcp::Session& Session,
+        std::string Value = "");
 
       std::vector<st::InputVariant> mInputs;
 
@@ -73,7 +91,9 @@ namespace st
 
       std::vector<st::Output> mOutputs;
 
-      const std::unordered_set<st::SerialId> mPiSerials;
+      std::unordered_map<st::SerialId, std::shared_ptr<dl::tcp::Session>> mSerialToSession;
+
+      const std::unordered_set<st::SerialId> mSerials;
 
       std::vector<std::reference_wrapper<InputVariant>> mCurrentRoundInputs;
 

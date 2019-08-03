@@ -1,12 +1,20 @@
 #include "Game.hpp"
+#include "Panel.hpp"
 #include <SpaceTeam/Success.hpp>
 #include <SpaceTeam/Update.hpp>
 #include <Utility/Visitor.hpp>
-#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include <bitset>
+#include <fmt/ostream.h>
+#include <experimental/memory>
 #include <random>
 
 using st::Game;
+
+template <typename T>
+using observer_ptr = std::experimental::observer_ptr<T>;
+
+using namespace std::chrono_literals;
 
 namespace
 {
@@ -23,6 +31,20 @@ namespace
     Stream >> Serial;
 
     return st::SerialId(Serial);
+  }
+
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  std::unordered_set<st::SerialId> GetSerials(const boost::property_tree::ptree& Tree)
+  {
+    std::unordered_set<st::SerialId> Serials;
+
+    for (const auto& [Name, SubTree] : Tree)
+    {
+      Serials.insert(GetSerial(SubTree.get<std::string>("PiSerial")));
+    }
+
+    return Serials;
   }
 
   //----------------------------------------------------------------------------
@@ -44,7 +66,7 @@ namespace
       return st::Momentary(Tree);
     }
 
-    throw std::logic_error("unreachable");
+    throw std::logic_error(fmt::format("unreachable {} line {}", __FILE__, __LINE__));
   }
 
   //----------------------------------------------------------------------------
@@ -94,18 +116,20 @@ namespace
 
   //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
-  std::unordered_set<st::SerialId> GetSerials(boost::property_tree::ptree& Tree)
+  std::unordered_map<st::SerialId, std::shared_ptr<dl::tcp::Session>> GetSerialToSessions(
+    const std::vector<std::unique_ptr<st::Panel>>& Panels)
   {
-    std::unordered_set<st::SerialId> Serials;
+    std::unordered_map<st::SerialId, std::shared_ptr<dl::tcp::Session>> SerialToSession;
 
-    for (const auto& [Label, SubTree]: Tree)
+    for (const auto& pPanel : Panels)
     {
-       Serials.insert(GetSerial(SubTree.get<std::string>("PiSerial")));
-
-       (void)Label;
+      if (auto oSerial = pPanel->GetSerial())
+      {
+        SerialToSession[*oSerial] = pPanel->mpSession;
+      }
     }
 
-    return Serials;
+    return SerialToSession;
   }
 }
 
@@ -114,36 +138,60 @@ int Game::mCurrentRound = 0;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-Game::Game(boost::property_tree::ptree& Tree)
+Game::Game(
+  boost::property_tree::ptree& Tree,
+  const std::vector<std::unique_ptr<st::Panel>>& Panels)
 : mInputs(ConstructInputs(Tree)),
   mCurrentActiveVariants(),
   mOutputs(ConstructOutputs(Tree)),
-  mPiSerials(GetSerials(Tree)),
+  mSerialToSession(GetSerialToSessions(Panels)),
+  mSerials(GetSerials(Tree)),
   mLastResetTime(),
   mStats()
 {
+  SendGpioDirections();
+
+  SendGpioValues();
+
+  GetNextRoundInputs();
+
+  for (const auto& Serial : mSerials)
+  {
+    GetInitialInputDisplay(Serial);
+  }
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void Game::GetNextRoundInputs(
-  const std::vector<st::SerialId>& ActivePanelSerialNumbers)
+void Game::GetNextRoundInputs()
 {
   mCurrentRoundInputs.clear();
 
-  const size_t RoundSizePerPanel = [this, &ActivePanelSerialNumbers]
+  auto ClearActive = [] (auto& InputVariant)
+  {
+    return std::visit(
+      [] (auto& Input) { return Input.ClearActive(); },
+      InputVariant);
+  };
+
+  for(auto& InputVariant : mInputs)
+  {
+    ClearActive(InputVariant);
+  }
+
+  const size_t RoundSizePerPanel = [this]
   {
     const auto RoundSize = GetRoundSizePerPanel();
 
-    if (RoundSize * ActivePanelSerialNumbers.size() > mInputs.size())
+    if (RoundSize * mSerialToSession.size() > mInputs.size())
     {
-      return mInputs.size() / ActivePanelSerialNumbers.size();
+      return mInputs.size() / mSerialToSession.size();
     }
 
     return RoundSize;
   }();
 
-  for (const auto SerialNumber : ActivePanelSerialNumbers)
+  for (const auto& [SerialNumber, pSession] : mSerialToSession)
   {
     std::vector<std::reference_wrapper<InputVariant>> PanelInputs;
 
@@ -189,6 +237,11 @@ std::string Game::GetNextInputDisplay(st::SerialId Serial)
       return std::visit([] (auto& Input) { return Input.GetIsActive(); }, Variant);
     };
 
+  int Id = GetId(InputVariant).get();
+  bool Active = GetIsActive(InputVariant);
+  int Current = GetId(CurrentVariant).get();
+  fmt::print("Id = {} GetIsActivve = {}, CurrentId = {}\n", Id, Active, Current);
+
     return (GetIsActive(InputVariant) || GetId(InputVariant) == GetId(CurrentVariant));
   };
 
@@ -202,6 +255,11 @@ std::string Game::GetNextInputDisplay(st::SerialId Serial)
     std::back_inserter(RandomCurrentRoundInputs),
     mCurrentRoundInputs.size(),
     Generator);
+
+  if (!mCurrentActiveVariants.count(Serial))
+  {
+    throw std::logic_error(fmt::format("unreachable {} line {}", __FILE__, __LINE__));
+  }
 
   auto& CurrentActiveInput = mCurrentActiveVariants[Serial]->get();
 
@@ -219,43 +277,30 @@ std::string Game::GetNextInputDisplay(st::SerialId Serial)
     }
   }
 
-  for (auto& rInputVariant : RandomCurrentRoundInputs)
-  {
-    auto GetId = [] (auto& Variant)
-    {
-      return std::visit([] (auto& Input) { return Input.GetId(); }, Variant);
-    };
-
-    auto GetName = [] (auto& Variant)
-    {
-      return std::visit([] (auto& Input) { return Input.GetLabel(); }, Variant);
-    };
-
-    auto GetIsActive = [] (auto& Variant)
-    {
-      if (std::visit([] (auto& Input) { return Input.GetIsActive(); }, Variant))
-      {
-        return true;
-      }
-      return false;
-    };
-
-    fmt::print("IsCurrentlyUsed = {}, id = {}, isActive {}, name {}\n",
-      IsCurrentlyUsed(rInputVariant.get(), CurrentActiveInput),
-      GetId(rInputVariant.get()),
-      static_cast<bool>(GetIsActive(rInputVariant.get())),
-      GetName(rInputVariant.get()));
-  }
-
-
-
-  throw std::logic_error("unreachable");
+  throw std::logic_error(fmt::format("unreachable {} line {}", __FILE__, __LINE__));
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-std::string Game::GetInitialInputDisplay(st::SerialId Serial)
+void Game::GetInitialInputDisplays()
 {
+  GetNextRoundInputs();
+
+  for (const auto Serial : mSerials)
+  {
+    GetInitialInputDisplay(Serial);
+  }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void Game::GetInitialInputDisplay(st::SerialId Serial)
+{
+  if (mCurrentRoundInputs.empty())
+  {
+    return;
+  }
+
   auto IsActive = [] (auto& Variant)
   {
     return std::visit([] (auto& Input) { return Input.GetIsActive(); }, Variant);
@@ -280,13 +325,11 @@ std::string Game::GetInitialInputDisplay(st::SerialId Serial)
 
       mLastResetTime[Serial] = std::chrono::system_clock::now();
 
-      return std::visit(
-        [Serial] (auto& Input) { return Input.GetNewCommand(Serial);},
-        mCurrentActiveVariants[Serial]->get());
+      return;
     }
   }
 
-  throw std::logic_error("unreachable");
+  throw std::logic_error(fmt::format("unreachable {} line {}", __FILE__, __LINE__));
 }
 
 //------------------------------------------------------------------------------
@@ -306,6 +349,41 @@ void Game::UpdateCurrentState(st::UpdateVec& Updates)
         InputVariant);
     }
   });
+
+  auto Success = GetSuccess();
+
+  for (auto Serial : Success.mIsActiveCompleted)
+  {
+    fmt::print("Success!\n");
+    fmt::print("score = {}\n", GetCurrentScore());
+
+    auto& Session = *(mSerialToSession[Serial]);
+
+    SendReset(Serial, Session);
+
+    UpdateScore(true);
+  }
+
+  if (Success.mInactiveFailCount > 0)
+  {
+    fmt::print("fail\n");
+    fmt::print("score = {}\n", GetCurrentScore());
+
+    UpdateScore(false);
+  }
+
+  for (const auto& [Serial, pSession] : mSerialToSession)
+  {
+    if (std::chrono::system_clock::now() - GetLastResetTime(Serial) > 20s)
+    {
+      fmt::print("fail\n");
+      fmt::print("score = {}\n", GetCurrentScore());
+
+      SendReset(Serial, *pSession);
+
+      UpdateScore(false);
+    }
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -341,7 +419,7 @@ std::chrono::time_point<std::chrono::system_clock> Game::GetLastResetTime(
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void Game::Success(bool Success, st::SerialId)
+void Game::UpdateScore(bool Success)
 {
   if (Success)
   {
@@ -417,13 +495,6 @@ st::HardwareValue Game::GetHardwareValue(st::SerialId PiSerial) const
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-const std::unordered_set<st::SerialId>& Game::GetPiSerials() const
-{
-  return mPiSerials;
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void Game::UpdateOutputs()
 {
   auto GetId = [] (auto& InputVariant) {return std::visit([] (auto& Input) { return Input.GetId(); }, InputVariant);};
@@ -470,3 +541,125 @@ std::vector<std::reference_wrapper<st::InputVariant>> Game::GetCurrentRoundInput
   return mCurrentRoundInputs;
 }
 
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+const std::unordered_set<st::SerialId>& Game::GetPiSerials() const
+{
+  return mSerials;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void Game::SendGpioDirections()
+{
+  for (const auto& [Serial, pSession] : mSerialToSession)
+  {
+    boost::property_tree::ptree Tree;
+
+    Tree.put("gpioDirection", GetHardwareDirection(Serial));
+
+    Tree.put("PiSerial", Serial);
+
+    std::stringstream Stream;
+
+    boost::property_tree::write_json(Stream, Tree);
+
+    pSession->Write(Stream.str());
+  }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void Game::SendGpioValues()
+{
+  for (const auto& [Serial, pSession] : mSerialToSession)
+  {
+    boost::property_tree::ptree Tree;
+
+    Tree.put("gpioValue", GetHardwareValue(Serial));
+
+    Tree.put("PiSerial", Serial);
+
+    std::stringstream Stream;
+
+    boost::property_tree::write_json(Stream, Tree);
+
+    pSession->Write(Stream.str());
+  }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void Game::SendReset(
+  st::SerialId SerialId,
+  dl::tcp::Session& Session,
+  std::string Value)
+{
+  boost::property_tree::ptree Tree;
+
+  if (Value.empty())
+  {
+    Value = GetNextInputDisplay(SerialId);
+  }
+
+  Tree.put("reset", Value);
+
+  std::stringstream Stream;
+
+  boost::property_tree::write_json(Stream, Tree);
+
+  boost::property_tree::write_json(std::cout, Tree);
+
+  Session.Write(Stream.str());
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void Game::SendNewRound()
+{
+  GetNextRoundInputs();
+
+  const auto CurrentRound = GetCurrentRound() + 1;
+
+  SetCurrentRound(CurrentRound);
+
+  SetCurrentScore(st::StartingScore);
+
+  //Debug
+  fmt::print("{}", "NewRound = [");
+
+  for (const auto& InputVariant : GetCurrentRoundInputs())
+  {
+    fmt::print("{},", std::visit(st::Visitor{
+      [] (st::Momentary& Input) { return Input.GetMessage(); },
+      [] (auto& Input) { return Input.GetLabel(); }},
+      InputVariant.get()));
+  }
+
+  fmt::print("]\n\n");
+  //Debug
+
+  UpdateOutputs();
+
+  for (auto& [SerialId, pSession] : mSerialToSession)
+  {
+    boost::property_tree::ptree Tree;
+
+    Tree.put(
+      "reset",
+      fmt::format(
+        "Round {} Completed. Good job so far, don't screw it up. You're almost there. Get Ready for Round {}!\n",
+        CurrentRound - 1,
+        CurrentRound));
+
+    Tree.put("wait", true);
+
+    std::stringstream Stream;
+
+    boost::property_tree::write_json(Stream, Tree);
+
+    pSession->Write(Stream.str());
+  }
+
+  std::this_thread::sleep_for(15s);
+}

@@ -64,6 +64,8 @@ bool Digital::IsInCorrectState() const
 //-----------------------------------------------------------------------------
 void Digital::IsCorrect(st::Success& Success)
 {
+  const auto Correct = IsInCorrectState();
+
   if (mIsActive)
   {
     if (IsInCorrectState())
@@ -71,17 +73,20 @@ void Digital::IsCorrect(st::Success& Success)
       Success.mIsActiveCompleted.insert(*mIsActive);
 
       mIsActive = std::nullopt;
+
+      mDesiredState = mCurrentState;
+    fmt::print("dddddsucess\n");
     }
     return;
   }
-
-  const auto Correct = IsInCorrectState();
 
   if (!Correct)
   {
     mDesiredState = mCurrentState;
 
     Success.mInactiveFailCount++;
+
+    fmt::print("ddddfail\n");
   }
 
   return;
@@ -112,10 +117,6 @@ void Digital::Update(const st::Update& Update)
     return;
   }
 
-  if (mCurrentState != Update.mValue)
-  {
-    fmt::print("Id {} changed\n", mId);
-  }
   mCurrentState = static_cast<bool>(Update.mValue);
 }
 

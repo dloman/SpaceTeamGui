@@ -1,6 +1,7 @@
 #include <SpaceTeam/Game.hpp>
 #include <SpaceTeam/Update.hpp>
 #include <SpaceTeam/Id.hpp>
+#include <SpaceTeam/Panel.hpp>
 #include <Utility/Visitor.hpp>
 #include <Utility/JsonAssembler.hpp>
 #include <imgui.h>
@@ -328,7 +329,7 @@ int main(int argc, char** argv)
 
   boost::property_tree::read_json("Setup.json", Tree);
 
-  st::Game Game(Tree);
+  st::Game Game(Tree, {});
 
   for (const auto PiSerial : Game.GetPiSerials())
   {
