@@ -311,7 +311,7 @@ void SendState(std::vector<DrawVariant>& Things)
           return;
         }
 
-        DigitalOutput[Input.mId.get()] = Input.mState;
+        DigitalOutput[Input.mId.mButtonIndex.get()] = Input.mState;
       }},
       DrawVariant);
   }

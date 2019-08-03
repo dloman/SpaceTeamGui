@@ -50,7 +50,7 @@ Panel::Panel(std::shared_ptr<dl::tcp::Session>& pSession)
         {
           mUpdates.Add(st::Update{
             .mPiSerial = st::SerialId(Serial),
-            .mId = st::ButtonId(i),
+            .mId = st::ButtonId(st::ButtonIndex(i), st::SerialId(Serial)),
             .mValue = static_cast<uint8_t>(Bits[i])});
         }
       }
@@ -74,7 +74,7 @@ Panel::Panel(std::shared_ptr<dl::tcp::Session>& pSession)
         {
           mUpdates.Add(st::Update{
             .mPiSerial = Serial,
-            .mId = st::ButtonId(i),
+            .mId = st::ButtonId(st::ButtonIndex(i), Serial),
             .mValue = Data[i]});
         }
       }

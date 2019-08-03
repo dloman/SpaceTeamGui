@@ -77,7 +77,7 @@ namespace
       .mPiSerial = GetSerial(Tree.get<std::string>("PiSerial")),
       .mId = st::OutputId(Tree.get<unsigned>("Id")),
       .mCurrentState = false,
-      .mInput = st::ButtonId(Tree.get<unsigned>("Input"))};
+      .mInput = st::ButtonId(Tree.get<st::ButtonIndex>("Input"),GetSerial(Tree.get<std::string>("PiSerial")))};
   }
 
   //----------------------------------------------------------------------------
@@ -237,9 +237,9 @@ std::string Game::GetNextInputDisplay(st::SerialId Serial)
       return std::visit([] (auto& Input) { return Input.GetIsActive(); }, Variant);
     };
 
-  int Id = GetId(InputVariant).get();
+  auto Id = GetId(InputVariant);
   bool Active = GetIsActive(InputVariant);
-  int Current = GetId(CurrentVariant).get();
+  auto Current = GetId(CurrentVariant);
   fmt::print("Id = {} GetIsActivve = {}, CurrentId = {}\n", Id, Active, Current);
 
     return (GetIsActive(InputVariant) || GetId(InputVariant) == GetId(CurrentVariant));
