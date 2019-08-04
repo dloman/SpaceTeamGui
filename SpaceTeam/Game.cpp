@@ -218,6 +218,8 @@ void Game::GetNextRoundInputs()
       std::back_inserter(mCurrentRoundInputs),
       std::min(RoundSizePerPanel, mInputs.size() - mCurrentRoundInputs.size()),
       Generator);
+
+  std::shuffle(mCurrentRoundInputs.begin(), mCurrentRoundInputs.end(), Generator);
   }
 }
 
@@ -255,6 +257,8 @@ std::string Game::GetNextInputDisplay(st::SerialId Serial)
     std::back_inserter(RandomCurrentRoundInputs),
     mCurrentRoundInputs.size(),
     Generator);
+
+  std::shuffle(RandomCurrentRoundInputs.begin(), RandomCurrentRoundInputs.end(), Generator);
 
   if (!mCurrentActiveVariants.count(Serial))
   {
@@ -317,6 +321,8 @@ void Game::GetInitialInputDisplay(st::SerialId Serial)
     mCurrentRoundInputs.size(),
     Generator);
 
+  std::shuffle(RandomCurrentRoundInputs.begin(), RandomCurrentRoundInputs.end(), Generator);
+
   for (auto& rInputVariant : RandomCurrentRoundInputs)
   {
     if (!IsActive(rInputVariant.get()))
@@ -378,6 +384,15 @@ void Game::UpdateCurrentState(st::UpdateVec& Updates)
     {
       fmt::print("fail\n");
       fmt::print("score = {}\n", GetCurrentScore());
+
+      auto ClearActive = [] (auto& InputVariant)
+      {
+        return std::visit(
+          [] (auto& Input) { return Input.ClearActive(); },
+          InputVariant);
+      };
+
+      ClearActive(mCurrentActiveVariants[Serial]->get());
 
       SendReset(Serial, *pSession);
 
