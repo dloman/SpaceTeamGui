@@ -17,19 +17,6 @@ using namespace std::literals::chrono_literals;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void TogglePins()
-{
-  st::hw::setGPIOVal(std::numeric_limits<uint64_t>::max());
-
-  std::this_thread::sleep_for(250ms);
-
-  st::hw::setGPIOVal(0);
-
-  std::this_thread::sleep_for(250ms);
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 void PrintAnalogState()
 {
   std::array<uint8_t, 24> Analog;
@@ -38,18 +25,27 @@ void PrintAnalogState()
 
   for (const auto& Val : Analog)
   {
-    fmt::print("{:x} ", Val);
+    fmt::print("{0:02x} ", Val);
   }
+  fmt::print("\n");
 }
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 int main()
 {
+  st::hw::setAllGPIOOutput();
+
   while (true)
   {
+    st::hw::setGPIOVal(0);
+
     PrintAnalogState();
 
-    TogglePins();
+    std::this_thread::sleep_for(250ms);
+
+    st::hw::setGPIOVal(std::numeric_limits<uint64_t>::max());
+
+    std::this_thread::sleep_for(250ms);
   }
 }

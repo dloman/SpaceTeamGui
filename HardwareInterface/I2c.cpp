@@ -87,16 +87,10 @@ int setGPIODir(uint64_t dir)
 int setGPIOVal(uint64_t val)
 {
    int result = write8(COMMAND_REG | COMMAND_OP0, (val >> 0) & 0xFF );
-   std::cout << "MSB: " << std::hex << (unsigned int)((val >> 0) & 0xFF);
    result |= write8(COMMAND_REG | COMMAND_OP1, (val >> 8) & 0xFF );
-   std::cout << " " << (unsigned int)((val >> 8) & 0xFF);
    result |= write8(COMMAND_REG | COMMAND_OP2, (val >> 16) & 0xFF );
-   std::cout << " " << (unsigned int)((val >> 16) & 0xFF);
    result |= write8(COMMAND_REG | COMMAND_OP3, (val >> 24) & 0xFF );
-   std::cout << " " << (unsigned int)((val >> 24) & 0xFF);
    result |= write8(COMMAND_REG | COMMAND_OP4, (val >> 32) & 0xFF );
-   std::cout << " " << (unsigned int)((val >> 32) & 0xFF);
-   std::cout << " LSB" << std::endl;
    return result;
 }
 
