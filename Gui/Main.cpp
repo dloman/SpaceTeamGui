@@ -149,7 +149,7 @@ void DoAnalog()
 
   Stream.write(reinterpret_cast<const char*>(&gSerialNumber), 8);
 
-  std::array<uint8_t, 24> Data;
+  std::array<uint8_t, 48> Data;
 
 #ifdef ENABLE_HARDWARE
   st::hw::adcReadFIFOAll(Data);
