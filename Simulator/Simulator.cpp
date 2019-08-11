@@ -125,7 +125,7 @@ namespace sim
 
       ImGui::SameLine();
 
-      ImGui::ProgressBar(mState, {-1,0}, mLabel.c_str());
+      ImGui::SliderInt(mLabel.c_str(), reinterpret_cast<int*>(&mState), 0, 255);
     }
 
     //--------------------------------------------------------------------------
@@ -260,9 +260,21 @@ void DrawPanel(std::vector<DrawVariant>& Things)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-std::string SerializeAnalog(const st::Analog& Analog)
+std::string SerializeAnalog(std::array<uint8_t, 24>& AnalogOutput)
 {
-  return "";
+  std::stringstream Stream;
+
+  const uint8_t Analog = 0x00;
+
+  Stream.write(reinterpret_cast<const char*>(&Analog), 1);
+
+  const auto Serial = GetSerial(gSerials[gCurrentIndex]);
+
+  Stream.write(reinterpret_cast<const char*>(&Serial), 8);
+
+  Stream.write(reinterpret_cast<const char*>(AnalogOutput.data()), AnalogOutput.size());
+
+  return Stream.str();
 }
 
 //------------------------------------------------------------------------------
@@ -294,15 +306,21 @@ void SendState(std::vector<DrawVariant>& Things)
 
   std::bitset<64> DigitalOutput(std::numeric_limits<uint64_t>::max());
 
+  std::array<uint8_t, 24> AnalogOutput;
+
+  AnalogOutput.fill(0);
+
   for (auto& DrawVariant : Things)
   {
     std::visit(st::Visitor{
-      [](sim::Analog& Input)
+      [&AnalogOutput](sim::Analog& Input)
       {
         if (Input.mPiSerial != GetSerial(gSerials[gCurrentIndex]))
         {
           return;
         }
+
+        AnalogOutput[Input.mId.mButtonIndex.get()] = Input.mState;
       },
       [&DigitalOutput](auto& Input)
       {
@@ -318,7 +336,7 @@ void SendState(std::vector<DrawVariant>& Things)
 
   gpClient->Write(SerializeDigital(DigitalOutput));
 
-  //gpClient->Write(SerializeAnalog());
+  gpClient->Write(SerializeAnalog(AnalogOutput));
 }
 
 //------------------------------------------------------------------------------

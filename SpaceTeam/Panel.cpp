@@ -66,11 +66,11 @@ Panel::Panel(std::shared_ptr<dl::tcp::Session>& pSession)
           moSerial = Serial;
         }
 
-        std::array<uint8_t, 48> Data;
+        std::array<uint8_t, 24> Data;
 
-        std::memcpy(Data.data(), Bytes.data() + 9, 8);
+        std::memcpy(Data.data(), Bytes.data() + 9, Data.size());
 
-        for (unsigned i = 0; i < 32; ++i)
+        for (unsigned i = 0; i < Data.size(); ++i)
         {
           mUpdates.Add(st::Update{
             .mPiSerial = Serial,
