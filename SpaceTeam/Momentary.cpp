@@ -1,4 +1,5 @@
 #include "Momentary.hpp"
+#include <HardwareInterface/Types.hpp>
 #include <SpaceTeam/Success.hpp>
 #include <SpaceTeam/Update.hpp>
 
@@ -76,6 +77,7 @@ void Momentary::IsCorrect(st::Success& Success)
   {
     mLastToggle = system_clock::now();
 
+    fmt::print("momentary fail\n");
     Success.mInactiveFailCount++;
   }
 
@@ -97,7 +99,8 @@ void Momentary::Update(const st::Update& Update)
 {
   if (
     Update.mPiSerial != mPiSerial ||
-    Update.mId != mId)
+    Update.mId != mId ||
+    Update.mUpdateType != eDeviceID::eDigital)
   {
     return;
   }

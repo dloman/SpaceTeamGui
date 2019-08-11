@@ -5,6 +5,8 @@
 #include <vector>
 #include <SpaceTeam/Id.hpp>
 
+enum class eDeviceID : uint8_t;
+
 namespace st
 {
   struct Update
@@ -14,6 +16,8 @@ namespace st
     const st::ButtonId mId;
 
     const uint8_t mValue;
+
+    const eDeviceID mUpdateType;
   };
 
   class UpdateVec
@@ -49,10 +53,17 @@ namespace st
         mUpdates.clear();
       }
 
+      size_t GetSize() const
+      {
+        std::lock_guard Lock(mMutex);
+
+        return mUpdates.size();
+      }
+
     private:
 
       std::vector<st::Update> mUpdates;
 
-      std::mutex mMutex;
+      mutable std::mutex mMutex;
   };
 }

@@ -1,4 +1,5 @@
 #include "Analog.hpp"
+#include <HardwareInterface/Types.hpp>
 #include <SpaceTeam/Success.hpp>
 #include <SpaceTeam/Update.hpp>
 #include <Utility/Random.hpp>
@@ -8,21 +9,7 @@ namespace
 {
   //---------------------------------------------------------------------------
   //---------------------------------------------------------------------------
-  template<typename ContainerType, typename ValueType>
-  typename ContainerType::const_iterator FindClosest(
-    ContainerType Container,
-    ValueType Value)
-  {
-    return std::min_element(
-      Container.begin(), Container.end(), [&Value](auto& x, auto& y)
-      {
-        return std::abs(x.mStart - Value) < std::abs(y.mStart - Value);
-      });
-  }
-
-  //---------------------------------------------------------------------------
-  //---------------------------------------------------------------------------
-  std::vector<st::Threshold> GetThresholds(
+  std::vector<st::Threshold> ConstructThresholds(
     const boost::property_tree::ptree& Tree)
   {
     std::vector<st::Threshold> Thresholds;
@@ -32,8 +19,8 @@ namespace
       if (Name == std::string("Threshold"))
       {
         Thresholds.emplace_back(st::Threshold{
-          SubTree.get<uint8_t>("Start"),
-          SubTree.get<uint8_t>("Stop"),
+          static_cast<uint8_t>(SubTree.get<int>("Start")),
+          static_cast<uint8_t>(SubTree.get<int>("Stop")),
           SubTree.get<std::string>("Label")});
       }
     }
@@ -51,8 +38,10 @@ const std::vector<std::string> Analog::mSetWords = {"Set", "Adjust", "Change"};
 //-----------------------------------------------------------------------------
 Analog::Analog(const boost::property_tree::ptree& Tree)
 : Input(Tree),
-  mDesiredValue(0.0),
-  mThresholds(GetThresholds(Tree))
+  mDesiredValue(0u),
+  mUpdateCount(0u),
+  mUpdateSum(0u),
+  mThresholds(ConstructThresholds(Tree))
 {
 }
 
@@ -74,7 +63,7 @@ std::string Analog::GetNewCommand(st::SerialId Serial)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool Analog::IsInCorrectState() const
+bool Analog::GetIsInCorrectState() const
 {
  return (mDesiredValue == GetThreshold(mCurrentState).mStart);
 }
@@ -83,9 +72,20 @@ bool Analog::IsInCorrectState() const
 //-----------------------------------------------------------------------------
 void Analog::IsCorrect(st::Success& Success)
 {
+  if (!mUpdateCount)
+  {
+    return;
+  }
+
+  mCurrentState = mUpdateSum / mUpdateCount;
+
+  mUpdateCount = mUpdateSum = 0;
+
+  const auto IsInCorrectState = GetIsInCorrectState();
+
   if (mIsActive)
   {
-    if (IsInCorrectState())
+    if (IsInCorrectState)
     {
       Success.mIsActiveCompleted.insert(*mIsActive);
 
@@ -95,9 +95,7 @@ void Analog::IsCorrect(st::Success& Success)
     return;
   }
 
-  const auto Correct = IsInCorrectState();
-
-  if (!Correct)
+  if (!IsInCorrectState)
   {
     mDesiredValue = GetThreshold(mCurrentState).mStart;
 
@@ -109,7 +107,13 @@ void Analog::IsCorrect(st::Success& Success)
 //-----------------------------------------------------------------------------
 const st::Threshold& Analog::GetThreshold(uint8_t Value) const
 {
-  const auto iThreshold = FindClosest(mThresholds, Value);
+  auto iThreshold = std::find_if(
+    mThresholds.begin(),
+    mThresholds.end(),
+    [&Value](const auto& x)
+    {
+    return (Value >= x.mStart && Value <= x.mStop);
+    });
 
   if (iThreshold == mThresholds.end())
   {
@@ -130,14 +134,21 @@ void Analog::SetCurrentState(uint8_t State)
 //-----------------------------------------------------------------------------
 uint8_t Analog::GetNewValue(const Threshold& CurrentThreshold)
 {
-  const auto& NewThreshold = mThresholds.at(
-    st::random::GetUniform(static_cast<size_t>(0),
-    mThresholds.size() - 1));
+  std::vector<Threshold> InActiveThresholds;
 
-  if (NewThreshold.mStart == CurrentThreshold.mStart)
-  {
-    return GetNewValue(CurrentThreshold);
-  }
+  std::copy_if(
+    mThresholds.begin(),
+    mThresholds.end(),
+    std::back_inserter(InActiveThresholds),
+    [Start = CurrentThreshold.mStart] (const auto& Threshold)
+    {
+      return Start != Threshold.mStart;
+    });
+
+  const auto& NewThreshold = InActiveThresholds.at(
+    st::random::GetUniform(
+      static_cast<size_t>(0),
+      InActiveThresholds.size() - 1));
 
   return NewThreshold.mStart;
 }
@@ -148,10 +159,15 @@ void Analog::Update(const st::Update& Update)
 {
   if (
     Update.mPiSerial != mPiSerial ||
-    Update.mId != mId)
+    Update.mId != mId ||
+    Update.mUpdateType != eDeviceID::eAnalog)
   {
     return;
   }
+
+  mUpdateSum += Update.mValue;
+
+  mUpdateCount++;
 }
 
 
@@ -161,3 +177,11 @@ uint8_t Analog::GetCurrentState() const
 {
   return mCurrentState;
 }
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+const std::vector<st::Threshold>& Analog::GetThresholds() const
+{
+  return mThresholds;
+}
+

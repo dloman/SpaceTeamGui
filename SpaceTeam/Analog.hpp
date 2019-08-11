@@ -30,9 +30,11 @@ namespace st
 
       void Update(const st::Update&);
 
+      const std::vector<st::Threshold>& GetThresholds() const;
+
     private:
 
-      bool IsInCorrectState() const;
+      bool GetIsInCorrectState() const;
 
       uint8_t GetNewValue(const Threshold& CurrentState);
 
@@ -43,6 +45,10 @@ namespace st
       uint8_t mDesiredValue;
 
       uint8_t mCurrentState;
+
+      uint64_t mUpdateCount;
+
+      uint64_t mUpdateSum;
 
       std::vector<Threshold> mThresholds;
   };

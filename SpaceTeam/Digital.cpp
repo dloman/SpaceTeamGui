@@ -1,4 +1,5 @@
 #include "Digital.hpp"
+#include <HardwareInterface/Types.hpp>
 #include <SpaceTeam/Success.hpp>
 #include <SpaceTeam/Update.hpp>
 #include <fmt/format.h>
@@ -112,7 +113,8 @@ void Digital::Update(const st::Update& Update)
 {
   if (
     Update.mPiSerial != mPiSerial ||
-    Update.mId != mId)
+    Update.mId != mId ||
+    Update.mUpdateType != eDeviceID::eDigital)
   {
     return;
   }

@@ -51,7 +51,8 @@ Panel::Panel(std::shared_ptr<dl::tcp::Session>& pSession)
           mUpdates.Add(st::Update{
             .mPiSerial = st::SerialId(Serial),
             .mId = st::ButtonId(st::ButtonIndex(i), st::SerialId(Serial)),
-            .mValue = static_cast<uint8_t>(Bits[i])});
+            .mValue = static_cast<uint8_t>(Bits[i]),
+            .mUpdateType = eDeviceID::eDigital});
         }
       }
       else if (static_cast<eDeviceID>(Bytes[0]) == eDeviceID::eAnalog)
@@ -75,7 +76,8 @@ Panel::Panel(std::shared_ptr<dl::tcp::Session>& pSession)
           mUpdates.Add(st::Update{
             .mPiSerial = Serial,
             .mId = st::ButtonId(st::ButtonIndex(i), Serial),
-            .mValue = Data[i]});
+            .mValue = Data[i],
+            .mUpdateType = eDeviceID::eAnalog});
         }
       }
     });

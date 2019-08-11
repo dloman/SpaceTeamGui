@@ -78,6 +78,23 @@ namespace
     throw std::logic_error("no output found");
   }
 
+  //------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------
+  std::string GetThresholdLabel(const std::vector<st::Threshold>& Thresholds)
+  {
+    std::string Label;
+
+    for (const auto& Threshold : Thresholds)
+    {
+      Label +=
+        Threshold.mLabel + ": [" +
+        std::to_string(static_cast<int>(Threshold.mStart)) + "," +
+        std::to_string(static_cast<int>(Threshold.mStop)) + "]         |     ";
+    }
+
+    return Label;
+  }
+
   //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
   st::SerialId GetSerial(const std::string& SerialString)
@@ -108,6 +125,8 @@ namespace sim
 
     const st::OutputId mLedId;
 
+    const std::string mThresholdLabel;
+
     uint8_t mState;
 
     bool mIsActive;
@@ -120,6 +139,8 @@ namespace sim
       {
         return;
       }
+
+      ImGui::Text(mThresholdLabel.c_str());
 
       ImGui::Checkbox("", &mIsActive);
 
@@ -366,6 +387,7 @@ int main(int argc, char** argv)
           .mLabel=Input.GetLabel(),
           .mId= Input.GetId(),
           .mLedId = GetLedId(Input.GetId(), Input.GetPiSerial(), Game),
+          .mThresholdLabel = GetThresholdLabel(Input.GetThresholds()),
           .mState = 0,
           .mIsActive = false});
       },
