@@ -1,4 +1,5 @@
 #include <HardwareInterface/I2c.h>
+#include <HardwareInterface/Spi.h>
 #include <HardwareInterface/Types.hpp>
 
 #include <boost/property_tree/json_parser.hpp>
@@ -35,17 +36,33 @@ void testPin(size_t Index)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-std::optional<size_t> GetDigitalOutput()
+std::optional<size_t> GetOutput()
 {
   const auto StartState = std::bitset<64>(st::hw::getGPIOVal());
+
+  std::array<uint8_t, 24> StartAnalog;
+
+  st::hw::adcReadFIFOAll(StartAnalog);
 
   for (int i = 0; i < 500; ++i)
   {
     const auto State = std::bitset<64>(st::hw::getGPIOVal());
 
+    std::array<uint8_t, 24> Analog;
+
+    st::hw::adcReadFIFOAll(Analog);
+
     for (size_t i = 0u; i < 64u; ++i)
     {
       if (StartState[i] != State[i])
+      {
+        return i;
+      }
+    }
+
+    for (auto i = 0u; i < Analog.size(); ++i)
+    {
+      if (std::abs(static_cast<int>(Analog[i]) - static_cast<int>(StartAnalog[i])) > 100)
       {
         return i;
       }
@@ -63,7 +80,7 @@ std::optional<size_t> GetDigitalOutput()
     return std::nullopt;
   }
 
-  return GetDigitalOutput();
+  return GetOutput();
 }
 
 //------------------------------------------------------------------------------
@@ -100,6 +117,90 @@ boost::property_tree::ptree GetMomentaryInput(uint64_t Led, uint64_t Pin)
 
   Tree.add_child("Input", Input);
 
+  LedTree.put("Id", Led);
+
+  LedTree.put("PiSerial", gPiSerial);
+
+  LedTree.put("Input", Pin);
+
+  Tree.add_child("Output", LedTree);
+
+  return Tree;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+boost::property_tree::ptree GetThreshold(uint64_t Pin)
+{
+  boost::property_tree::ptree Tree;
+
+  std::string Data;
+
+  fmt::print("Enter the Label:\n");
+
+  std::cin.ignore();
+
+  std::getline(std::cin, Data);
+
+  Tree.put("Label", Data);
+
+  std::array<uint8_t, 24> Analog;
+
+  fmt::print("Enter any key when at start\n");
+
+  std::getline(std::cin, Data);
+
+  st::hw::adcReadFIFOAll(Analog);
+
+  Tree.put("Start", Analog[Pin]);
+
+  fmt::print("Enter any key when at stop\n");
+
+  std::getline(std::cin, Data);
+
+  st::hw::adcReadFIFOAll(Analog);
+
+  Tree.put("Stop", Analog[Pin]);
+
+  return Tree;
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+boost::property_tree::ptree GetAnalogInput(uint64_t Led, uint64_t Pin)
+{
+  boost::property_tree::ptree Tree, Input, LedTree;
+
+  Input.put("Type", "Analog");
+
+  Input.put("Id", Pin);
+
+  Input.put("PiSerial", gPiSerial);
+
+  std::string Data;
+
+  fmt::print("Enter the Label:\n");
+
+  std::cin.ignore();
+
+  std::getline(std::cin, Data);
+
+  Input.put("Label", Data);
+
+  fmt::print("Enter how many thresholds:\n");
+
+  int NumberOfThresholds;
+
+  std::cin >> NumberOfThresholds;
+
+  for (int i = 0; i < NumberOfThresholds; ++i)
+  {
+    Input.add_child("Threshold", GetThreshold(Pin));
+  }
+
+  Tree.add_child("Input", Input);
+
+  //Led
   LedTree.put("Id", Led);
 
   LedTree.put("PiSerial", gPiSerial);
@@ -226,13 +327,13 @@ int main()
 
     fmt::print("Switch State of associated dingle\n");
 
-    auto oDevice = GetDigitalOutput();
+    auto oDevice = GetOutput();
 
     if (oDevice)
     {
       auto SubTree = [&Led, &oDevice, &Input]
         {
-          fmt::print("found corresponding input!\n type m for Momentary or d for Digital\n");
+          fmt::print("found corresponding input!\n type m for Momentary or d for Digital or a for Analog\n");
 
           std::cin >> Input;
 
@@ -245,6 +346,10 @@ int main()
             else if (Input == 'm')
             {
               return GetMomentaryInput(Led, *oDevice);
+            }
+            else if (Input == 'a')
+            {
+              return GetAnalogInput(Led, *oDevice);
             }
           }
         }();
