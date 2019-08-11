@@ -19,7 +19,7 @@ using namespace std::literals::chrono_literals;
 //------------------------------------------------------------------------------
 void PrintAnalogState()
 {
-  std::array<uint8_t, 24> Analog;
+  std::array<uint8_t, 48> Analog;
 
   st::hw::adcReadFIFOAll(Analog);
 

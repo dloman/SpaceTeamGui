@@ -133,21 +133,21 @@ void adcWriteResetReg(uint8_t channel, ResetReg_t* data)
    adcSPIDataRW(channel, buf, 1);
 }
 
-std::array<uint8_t, 8> adcReadFIFO(uint8_t channel)
+std::array<uint8_t, 16> adcReadFIFO(uint8_t channel)
 {
-   std::array<uint8_t, 8> Output;
+   std::array<uint8_t, 16> Output;
 
    adcWriteConversionReg(channel, &conversionData);
    //512 conversion delay
    std::this_thread::sleep_for(std::chrono::milliseconds(4));
 
-   std::array<uint8_t, 17> Buffer;
+   std::array<uint8_t, 33> Buffer;
 
    Buffer.fill(0);
 
-   adcSPIDataRW(channel, Buffer.data(), 17);
+   adcSPIDataRW(channel, Buffer.data(), 33);
 
-   for (size_t i = 0; i < 8; ++i)
+   for (size_t i = 0; i < 16; ++i)
    {
      int Temp = *(Buffer.data() + 2*i);
 
@@ -214,7 +214,7 @@ int adcSetupAll()
 namespace st::hw
 {
   //Needs 48 bytes of buffer
-  void adcReadFIFOAll(std::array<uint8_t, 24>& Buffer)
+  void adcReadFIFOAll(std::array<uint8_t, 48>& Buffer)
   {
     static int Init = adcSetupAll();
 
@@ -224,7 +224,7 @@ namespace st::hw
      {
         auto Output = adcReadFIFO(i);
 
-        std::memcpy(Buffer.data() + (i * 8), Output.data(), 8);
+        std::memcpy(Buffer.data() + (i * 16), Output.data(), 16);
      }
   }
 }

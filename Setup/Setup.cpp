@@ -40,7 +40,7 @@ std::optional<size_t> GetOutput()
 {
   const auto StartState = std::bitset<64>(st::hw::getGPIOVal());
 
-  std::array<uint8_t, 24> StartAnalog;
+  std::array<uint8_t, 48> StartAnalog;
 
   st::hw::adcReadFIFOAll(StartAnalog);
 
@@ -48,7 +48,7 @@ std::optional<size_t> GetOutput()
   {
     const auto State = std::bitset<64>(st::hw::getGPIOVal());
 
-    std::array<uint8_t, 24> Analog;
+    std::array<uint8_t, 48> Analog;
 
     st::hw::adcReadFIFOAll(Analog);
 
@@ -144,7 +144,7 @@ boost::property_tree::ptree GetThreshold(uint64_t Pin)
 
   Tree.put("Label", Data);
 
-  std::array<uint8_t, 24> Analog;
+  std::array<uint8_t, 48> Analog;
 
   fmt::print("Enter any key when at start\n");
 
