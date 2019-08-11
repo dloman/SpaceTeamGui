@@ -6,7 +6,10 @@
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
 #include <cstring>
+#include <chrono>
+#include <thread>
 
+#include <iomanip>
 namespace
 {
 using namespace std;
@@ -103,8 +106,9 @@ void adcSPIDataRW(uint8_t channel, unsigned char* buffer, uint32_t len){
 void adcWriteConversionReg(uint8_t channel, ConversionReg_t* data)
 {
    unsigned char buf[4];
+   buf[1] = buf[2] = 0;
    buf[0] = data->data;
-   adcSPIDataRW(channel, buf, 1);
+   adcSPIDataRW(channel, buf, 3);
 }
 
 void adcWriteSetupReg(uint8_t channel, SetupReg_t* data)
@@ -129,11 +133,30 @@ void adcWriteResetReg(uint8_t channel, ResetReg_t* data)
    adcSPIDataRW(channel, buf, 1);
 }
 
-void adcReadFIFO(uint8_t channel, unsigned char* buffer)
+std::array<uint8_t, 8> adcReadFIFO(uint8_t channel)
 {
+   std::array<uint8_t, 8> Output;
+
    adcWriteConversionReg(channel, &conversionData);
-   memset(buffer, 0, 16);
-   adcSPIDataRW(channel, buffer, 16);
+   //512 conversion delay
+   std::this_thread::sleep_for(std::chrono::milliseconds(4));
+
+   std::array<uint8_t, 17> Buffer;
+
+   Buffer.fill(0);
+
+   adcSPIDataRW(channel, Buffer.data(), 17);
+
+   for (size_t i = 0; i < 8; ++i)
+   {
+     int Temp = *(Buffer.data() + 2*i);
+
+     Temp<<=4;
+
+     Output[i] = Temp;
+   }
+
+   return Output;
 }
 
 
@@ -191,7 +214,7 @@ int adcSetupAll()
 namespace st::hw
 {
   //Needs 48 bytes of buffer
-  void adcReadFIFOAll(unsigned char* buffer)
+  void adcReadFIFOAll(std::array<uint8_t, 24>& Buffer)
   {
     static int Init = adcSetupAll();
 
@@ -199,7 +222,9 @@ namespace st::hw
 
      for(uint8_t i = 0; i < NUM_ADCS; i++)
      {
-        adcReadFIFO(i, (buffer + ((16*i))));
+        auto Output = adcReadFIFO(i);
+
+        std::memcpy(Buffer.data() + (i * 8), Output.data(), 8);
      }
   }
 }

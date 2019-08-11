@@ -19,6 +19,12 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <fmt/format.h>
 #include <chrono>
+#include <array>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <bitset>
+#include <cstring>
 
 using namespace std::literals;
 
@@ -143,14 +149,15 @@ void DoAnalog()
 
   Stream.write(reinterpret_cast<const char*>(&gSerialNumber), 8);
 
-  std::array<uint8_t, 48> Data;
+  std::array<uint8_t, 24> Data;
 
 #ifdef ENABLE_HARDWARE
-  st::hw::adcReadFIFOAll(Data.data());
+  st::hw::adcReadFIFOAll(Data);
 #else
- Data.fill(0);
+  Data.fill(0);
 #endif
-  Stream.write(reinterpret_cast<const char*>(Data.data()), 48);
+
+  Stream.write(reinterpret_cast<const char*>(Data.data()), Data.size());
 
   gpClient->Write(Stream.str());
 }
@@ -161,7 +168,7 @@ void DoHardware()
 {
   DoDigital();
 
-  //DoAnalog();
+  DoAnalog();
 }
 
 //------------------------------------------------------------------------------
@@ -412,6 +419,7 @@ void OnError(const std::string& Error)
 
   gWait = true;
 }
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 int main(int argc, char** argv)
