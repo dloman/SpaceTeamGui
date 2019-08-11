@@ -197,3 +197,14 @@ target_link_libraries(
   SpaceTeamHardware
   fmt::fmt
   )
+
+add_executable(
+  ToggleInputsPrintAnalog
+  TestUtilities/ToggleInputsPrintAnalog.cpp
+  )
+
+target_link_libraries(
+  ToggleInputsPrintAnalog
+  SpaceTeamHardware
+  fmt::fmt
+  )
