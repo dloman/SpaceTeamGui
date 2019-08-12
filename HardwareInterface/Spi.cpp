@@ -9,222 +9,191 @@
 #include <chrono>
 #include <thread>
 
+#define _BV(bit) \
+	(1 << (bit))
+
+#define _NBV(bit) \
+	(0 << (bit))
+
+#define RESET_BITFLAG_BP      4
+#define DO_RESET_BP           3
+
+#define SETUP_BITFLAG_BP      5
+#define CKSEL1_BP             5
+#define CKSEL0_BP             4
+#define REFSEL1_BP            3
+#define REFSEL0_BP            2
+
+#define AVERAGING_BITFLAG_BP  6
+#define AVGON_BP              4
+#define NAVG1_BP              3
+#define NAVG0_BP              2
+#define NSCAN1_BP             1
+#define NSCAN0_BP             0
+
+#define CONVERSION_BITFLAG_BP 7
+#define CHSEL3_BP             6
+#define CHSEL2_BP             5
+#define CHSEL1_BP             4
+#define CHSEL0_BP             3
+#define SCAN1_BP              2
+#define SCAN0_BP              1
+
+
+
 #include <iomanip>
 namespace
 {
-using namespace std;
+	using namespace std;
 
 
-#define CONVERSION_REG_ADDR  0x80
-typedef union {
-   uint8_t data;
-   struct {
-      volatile uint8_t bit0 : 1;
-      volatile uint8_t SCAN : 2;
-      volatile uint8_t CHSEL : 4;
-      volatile uint8_t bit7 : 1;
-   }bits;
-} ConversionReg_t;
+	const uint32_t NUM_ADCS = 3;
+	//max speed is 4.8MHz with clock mode 11
+	const uint32_t SPEED = 1000000;
 
-#define SETUP_REG_ADDR  0x40
-typedef union {
-   uint8_t data;
-   struct {
-      volatile uint8_t bit0 : 1;
-      volatile uint8_t bit1 : 1;
-      volatile uint8_t REFSEL : 2;
-      volatile uint8_t CKSEL : 2;
-      volatile uint8_t bit6 : 1;
-      volatile uint8_t bit7 : 1;
-   }bits;
-} SetupReg_t;
+	//Global vars to store configs for all ADC's
+	SetupReg_t setupData = {0};
+	ConversionReg_t conversionData = {0};
 
-#define AVERAGING_REG_ADDR  0x20
-typedef union {
-   uint8_t data;
-   struct {
-      volatile uint8_t NSCAN : 2;
-      volatile uint8_t NAVG : 2;
-      volatile uint8_t AVGON : 1;
-      volatile uint8_t bit5 : 1;
-      volatile uint8_t bit6 : 1;
-      volatile uint8_t bit7 : 1;
-   }bits;
-} AveragingReg_t;
+	int fd;
 
-#define RESET_REG_ADDR  0x10
-typedef union {
-   uint8_t data;
-   struct {
-      volatile uint8_t bit0 : 1;
-      volatile uint8_t bit1 : 1;
-      volatile uint8_t bit2 : 1;
-      volatile uint8_t RESET : 1;
-      volatile uint8_t bit4 : 1;
-      volatile uint8_t bit5 : 1;
-      volatile uint8_t bit6 : 1;
-      volatile uint8_t bit7 : 1;
-   }bits;
-} ResetReg_t;
+	void adcSPIDataRW(uint8_t channel, unsigned char* buffer, uint32_t len)
+	{
+		int gpioPin;
 
-const uint32_t NUM_ADCS = 3;
-//max speed is 4.8MHz with clock mode 11
-const uint32_t SPEED = 1000000;
+		switch (channel)
+		{
+			case 0:
+				{
+					gpioPin = 24;
+					break;
+				}
 
-//Global vars to store configs for all ADC's
-SetupReg_t setupData = {0};
-ConversionReg_t conversionData = {0};
+			case 1:
+				{
+					gpioPin = 28;
+					break;
+				}
 
-int fd;
+			case 2:
+				{
+					gpioPin = 29;
+					break;
+				}
+		}
 
-void adcSPIDataRW(uint8_t channel, unsigned char* buffer, uint32_t len){
-   int gpioPin;
-   switch(channel){
-      case 0:
-      {
-         gpioPin = 24;
-         break;
-      }
-      case 1:
-      {
-         gpioPin = 28;
-         break;
-      }
-      case 2:
-      {
-         gpioPin = 29;
-         break;
-      }
-   }
-   digitalWrite(gpioPin, LOW);
-   usleep(10);
-   wiringPiSPIDataRW(0, buffer, len);
-   usleep(10);
-   digitalWrite(gpioPin, HIGH);
-}
-
-void adcWriteConversionReg(uint8_t channel, ConversionReg_t* data)
-{
-   unsigned char buf[4];
-   buf[1] = buf[2] = 0;
-   buf[0] = data->data;
-   adcSPIDataRW(channel, buf, 3);
-}
-
-void adcWriteSetupReg(uint8_t channel, SetupReg_t* data)
-{
-   unsigned char buf[2];
-   buf[0] = data->data;
-   adcSPIDataRW(channel, buf, 1);
-}
-
-/*
-void adcWriteAveragingReg(uint8_t channel, AveragingReg_t* data)
-{
-   unsigned char buf[2];
-   buf[0] = data->data;
-   adcSPIDataRW(channel, buf, 1);
-}*/
-
-void adcWriteResetReg(uint8_t channel, ResetReg_t* data)
-{
-   unsigned char buf[2];
-   buf[0] = data->data;
-   adcSPIDataRW(channel, buf, 1);
-}
-
-std::array<uint8_t, 16> adcReadFIFO(uint8_t channel)
-{
-   std::array<uint8_t, 16> Output;
-
-   adcWriteConversionReg(channel, &conversionData);
-   //512 conversion delay
-   std::this_thread::sleep_for(std::chrono::milliseconds(4));
-
-   std::array<uint8_t, 33> Buffer;
-
-   Buffer.fill(0);
-
-   adcSPIDataRW(channel, Buffer.data(), 33);
-
-   for (size_t i = 0; i < 16; ++i)
-   {
-     int Temp = *(Buffer.data() + 2*i);
-
-     Temp<<=4;
-
-     Output[i] = Temp;
-   }
-
-   return Output;
-}
+		digitalWrite(gpioPin, LOW);
+		usleep(10);
+		wiringPiSPIDataRW(0, buffer, len);
+		usleep(10);
+		digitalWrite(gpioPin, HIGH);
+	}
 
 
 
-void adcSetup(uint8_t channel)
-{
-   //CPOL = CPHA = 0
-   int spiMode = 0;
+	std::array<uint8_t, 16> adcReadFIFO(uint8_t channel)
+	{
+		std::array<uint8_t, 16> Output;
 
-   //initialize pins
-   wiringPiSetup();
-   pinMode(24, OUTPUT);
-   pinMode(29, OUTPUT);
-   pinMode(28, OUTPUT);
-   digitalWrite(24, HIGH);
-   digitalWrite(29, HIGH);
-   digitalWrite(28, HIGH);
+		adcWriteConversionReg(channel, &conversionData);
+		//512 conversion delay
+		std::this_thread::sleep_for(std::chrono::milliseconds(4));
 
-   //Initialize descriptor
-   fd = wiringPiSPISetup(0, SPEED);
+		std::array<uint8_t, 33> Buffer;
 
-   ioctl(fd, SPI_IOC_WR_MODE, &spiMode);
+		Buffer.fill(0);
 
-   //Reset ADC
-   ResetReg_t resetData = {0};
-   resetData.data = RESET_REG_ADDR;
-   resetData.bits.RESET = 1;
-   adcWriteResetReg(channel, &resetData);
+		adcSPIDataRW(channel, Buffer.data(), 33);
 
-   //Setup reference and timing
-   setupData.data = SETUP_REG_ADDR;
-   setupData.bits.CKSEL = 2;  //Internally timed, internally triggered, AIN15/7
-   setupData.bits.REFSEL = 2; //Reference always on
-   adcWriteSetupReg(channel, &setupData);
+		for (size_t i = 0; i < 16; ++i)
+		{
+			int Temp = *(Buffer.data() + 2 * i);
 
-   //Setup ADC scanning and set to scan all channels
-   conversionData.data = CONVERSION_REG_ADDR;
-   conversionData.bits.SCAN = 0; //Scans 0 through N channels
-   conversionData.bits.CHSEL = 0x0F; //N = ANIN15
-   adcWriteConversionReg(channel, &conversionData);
+			Temp <<= 4;
 
-}
+			Output[i] = Temp;
+		}
 
-int adcSetupAll()
-{
-   for (uint8_t i = 0; i < NUM_ADCS; i++)
-   {
-      adcSetup(i);
-   }
+		return Output;
+	}
 
-   return 1;
-}
+
+
+
+
+
+
+	void adcSetup(uint8_t channel)
+	{
+		//CPOL = CPHA = 0
+		int spiMode = 0;
+
+		//initialize pins
+		wiringPiSetup();
+		pinMode(24, OUTPUT);
+		pinMode(29, OUTPUT);
+		pinMode(28, OUTPUT);
+		digitalWrite(24, HIGH);
+		digitalWrite(29, HIGH);
+		digitalWrite(28, HIGH);
+
+		//Initialize descriptor
+		fd = wiringPiSPISetup(0, SPEED);
+
+		ioctl(fd, SPI_IOC_WR_MODE, &spiMode);
+
+		
+		//Reset ADC
+		unsigned char buf[4] = {0};
+		buf[0] = _BV(RESET_BITFLAG_BP)              // Reset register
+		       | _BV(DO_RESET_BP)                   // Do reset the device
+		    ;
+		adcSPIDataRW(channel, buf, 1);
+
+
+		//Setup reference and timing
+		memset(buf, sizeof(buf), 0);
+		buf[0] = _BV(SETUP_BITFLAG_BP)               // Setup register 
+		       | _BV(CKSEL1_BP)  | _NBV(CKSEL0_BP)   // Internal conversion clock/sampling/acqusition, AIN15 as AIN15, not CNVST
+		       | _BV(REFSEL1_BP) | _NBV(REFSEL0_BP)  // Internal voltage reference, keep VRef on after conversion;
+		    ;
+		adcSPIDataRW(channel, buf, 1);
+	 
+		//Setup ADC scanning and set to scan all channels
+		memset(buf, sizeof(buf), 0);
+		buf[0] = _BV(CONVERSION_BITFLAG_BP)                                           // Conversion Register
+		       | _BV(CHSEL3_BP) | _BV(CHSEL2_BP) | _BV(CHSEL1_BP)  | _BV(CHSEL0_BP)   // Convert all 16 channels
+		       | _NBV(SCAN1_BP) | _NBV(SCAN0_BP)                                      // Scan channels 0 to CHSEL
+		    ;
+		adcSPIDataRW(channel, buf, 1);
+
+
+	}
+	int adcSetupAll()
+	{
+		for (uint8_t i = 0; i < NUM_ADCS; i++)
+		{
+			adcSetup(i);
+		}
+
+		return 1;
+	}
 }
 
 namespace st::hw
 {
-  //Needs 48 bytes of buffer
-  void adcReadFIFOAll(std::array<uint8_t, 48>& Buffer)
-  {
-    static int Init = adcSetupAll();
+	//Needs 48 bytes of buffer
+	void adcReadFIFOAll(std::array<uint8_t, 48>& Buffer)
+	{
+		static int Init = adcSetupAll();
 
-    (void)Init;
+		(void)Init;
 
-     for(uint8_t i = 0; i < NUM_ADCS; i++)
-     {
-        auto Output = adcReadFIFO(i);
+		for (uint8_t i = 0; i < NUM_ADCS; i++)
+		{
+			auto Output = adcReadFIFO(i);
 
-        std::memcpy(Buffer.data() + (i * 16), Output.data(), 16);
-     }
-  }
+			std::memcpy(Buffer.data() + (i * 16), Output.data(), 16);
+		}
+	}
 }
