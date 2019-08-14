@@ -20,7 +20,7 @@ using namespace std::literals::chrono_literals;
 void testPin(size_t Index)
 {
   fmt::print("Printing Pin {}\n", Index);
-  std::bitset<64> Value(0);
+  std::bitset<64> Value(std::numeric_limits<uint64_t>::max());
 
   for (int i = 0; i < 10; ++i)
   {
@@ -31,7 +31,7 @@ void testPin(size_t Index)
     std::this_thread::sleep_for(250ms);
   }
 
-  st::hw::setGPIOVal(0);
+  st::hw::setGPIOVal(std::numeric_limits<uint64_t>::max());
 }
 
 //------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ std::optional<size_t> GetOutput()
 
     for (auto i = 0u; i < Analog.size(); ++i)
     {
-      if (std::abs(static_cast<int>(Analog[i]) - static_cast<int>(StartAnalog[i])) > 150)
+      if (std::abs(static_cast<int>(Analog[i]) - static_cast<int>(StartAnalog[i])) > 200)
       {
         return i;
       }
@@ -273,8 +273,8 @@ int main()
   std::vector<size_t> Leds;
 
   char Input;
-  //for (auto i = 0; i < 48; ++i)
-  for (auto i = 11; i < 14; ++i)
+/*
+  for (auto i = 0; i < 40; ++i)
   {
     testPin(i);
 
@@ -293,10 +293,12 @@ int main()
       --i;
     }
   }
+  */
 
   std::bitset<64> Bits(std::numeric_limits<uint64_t>::max());
 
-  for (const auto Led : Leds)
+  //for (const auto Led : Leds)
+  for (const auto Led : { 2, 3, 4, 5, 6, 14, 15, 16, 17, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39})
   {
     Bits[Led] = false;
   }
@@ -307,9 +309,15 @@ int main()
 
   for (const auto Led : Leds)
   {
-    std::bitset<64> Value(0);
+    fmt::print("{}, ", Led);
+  }
+  fmt::print("\n");
 
-    Value[Led] = true;
+  for (const auto Led : Leds)
+  {
+    std::bitset<64> Value(std::numeric_limits<uint64_t>::max());
+
+    Value[Led] = false;
 
     st::hw::setGPIOVal(Value.to_ullong());
 

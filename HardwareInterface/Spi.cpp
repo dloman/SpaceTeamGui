@@ -9,6 +9,7 @@
 #include <chrono>
 #include <thread>
 
+#include <fmt/format.h>
 #include <iomanip>
 namespace
 {
