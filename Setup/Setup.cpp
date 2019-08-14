@@ -46,23 +46,13 @@ std::optional<size_t> GetOutput()
 
   for (int i = 0; i < 500; ++i)
   {
-    const auto State = std::bitset<64>(st::hw::getGPIOVal());
-
     std::array<uint8_t, 48> Analog;
 
     st::hw::adcReadFIFOAll(Analog);
 
-    for (size_t i = 0u; i < 64u; ++i)
-    {
-      if (StartState[i] != State[i])
-      {
-        return i;
-      }
-    }
-
     for (auto i = 0u; i < Analog.size(); ++i)
     {
-      if (std::abs(static_cast<int>(Analog[i]) - static_cast<int>(StartAnalog[i])) > 100)
+      if (std::abs(static_cast<int>(Analog[i]) - static_cast<int>(StartAnalog[i])) > 150)
       {
         return i;
       }
