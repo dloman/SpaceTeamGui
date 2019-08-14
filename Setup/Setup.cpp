@@ -38,8 +38,6 @@ void testPin(size_t Index)
 //------------------------------------------------------------------------------
 std::optional<size_t> GetOutput()
 {
-  const auto StartState = std::bitset<64>(st::hw::getGPIOVal());
-
   std::array<uint8_t, 48> StartAnalog;
 
   st::hw::adcReadFIFOAll(StartAnalog);
