@@ -325,8 +325,6 @@ void SendState(std::vector<DrawVariant>& Things)
 {
   std::string Bytes;
 
-  std::bitset<64> DigitalOutput(std::numeric_limits<uint64_t>::max());
-
   std::array<uint8_t, 24> AnalogOutput;
 
   AnalogOutput.fill(0);
@@ -343,19 +341,17 @@ void SendState(std::vector<DrawVariant>& Things)
 
         AnalogOutput[Input.mId.mButtonIndex.get()] = Input.mState;
       },
-      [&DigitalOutput](auto& Input)
+      [&AnalogOutput](auto& Input)
       {
         if (Input.mPiSerial != GetSerial(gSerials[gCurrentIndex]))
         {
           return;
         }
 
-        DigitalOutput[Input.mId.mButtonIndex.get()] = Input.mState;
+        AnalogOutput[Input.mId.mButtonIndex.get()] = Input.mState ? 0 : 255u;
       }},
       DrawVariant);
   }
-
-  gpClient->Write(SerializeDigital(DigitalOutput));
 
   gpClient->Write(SerializeAnalog(AnalogOutput));
 }

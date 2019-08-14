@@ -12,8 +12,6 @@
 #include <iomanip>
 namespace
 {
-using namespace std;
-
 
 #define CONVERSION_REG_ADDR  0x80
 typedef union {
@@ -77,6 +75,8 @@ ConversionReg_t conversionData = {0};
 
 int fd;
 
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void adcSPIDataRW(uint8_t channel, unsigned char* buffer, uint32_t len){
    int gpioPin;
    switch(channel){
@@ -103,6 +103,8 @@ void adcSPIDataRW(uint8_t channel, unsigned char* buffer, uint32_t len){
    digitalWrite(gpioPin, HIGH);
 }
 
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void adcWriteConversionReg(uint8_t channel, ConversionReg_t* data)
 {
    unsigned char buf[4];
@@ -111,6 +113,8 @@ void adcWriteConversionReg(uint8_t channel, ConversionReg_t* data)
    adcSPIDataRW(channel, buf, 3);
 }
 
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void adcWriteSetupReg(uint8_t channel, SetupReg_t* data)
 {
    unsigned char buf[2];
@@ -119,6 +123,8 @@ void adcWriteSetupReg(uint8_t channel, SetupReg_t* data)
 }
 
 /*
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void adcWriteAveragingReg(uint8_t channel, AveragingReg_t* data)
 {
    unsigned char buf[2];
@@ -126,6 +132,8 @@ void adcWriteAveragingReg(uint8_t channel, AveragingReg_t* data)
    adcSPIDataRW(channel, buf, 1);
 }*/
 
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void adcWriteResetReg(uint8_t channel, ResetReg_t* data)
 {
    unsigned char buf[2];
@@ -133,6 +141,8 @@ void adcWriteResetReg(uint8_t channel, ResetReg_t* data)
    adcSPIDataRW(channel, buf, 1);
 }
 
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::array<uint8_t, 16> adcReadFIFO(uint8_t channel)
 {
    std::array<uint8_t, 16> Output;
@@ -159,8 +169,8 @@ std::array<uint8_t, 16> adcReadFIFO(uint8_t channel)
    return Output;
 }
 
-
-
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void adcSetup(uint8_t channel)
 {
    //CPOL = CPHA = 0
@@ -200,6 +210,8 @@ void adcSetup(uint8_t channel)
 
 }
 
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int adcSetupAll()
 {
    for (uint8_t i = 0; i < NUM_ADCS; i++)
@@ -213,7 +225,8 @@ int adcSetupAll()
 
 namespace st::hw
 {
-  //Needs 48 bytes of buffer
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
   void adcReadFIFOAll(std::array<uint8_t, 48>& Buffer)
   {
     static int Init = adcSetupAll();

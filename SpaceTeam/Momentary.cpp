@@ -99,8 +99,7 @@ void Momentary::Update(const st::Update& Update)
 {
   if (
     Update.mPiSerial != mPiSerial ||
-    Update.mId != mId ||
-    Update.mUpdateType != eDeviceID::eDigital)
+    Update.mId != mId)
   {
     return;
   }
