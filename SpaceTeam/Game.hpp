@@ -72,6 +72,8 @@ namespace st
 
       void UpdateScore(bool Success);
 
+      void SendScore();
+
       size_t GetRoundSizePerPanel();
 
       double GetCurrentState(const InputVariant& Input);

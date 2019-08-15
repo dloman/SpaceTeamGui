@@ -20,6 +20,7 @@
 using namespace std::literals;
 
 int gCurrentIndex = 0;
+int gScore = 100;
 st::JsonAssembler gJsonPacketAssembler;
 
 std::unique_ptr<dl::tcp::Client<dl::tcp::Session>> gpClient;
@@ -473,6 +474,13 @@ int main(int argc, char** argv)
       }
       return;
     }
+
+    if (const auto oScore = Tree.get_optional<uint64_t>("score"))
+    {
+      gScore = *oScore;
+
+      return;
+    }
   });
 
   if (argc > 1)
@@ -534,6 +542,13 @@ int main(int argc, char** argv)
 
     ImGui::SFML::Update(window, deltaClock.restart());
 
+    auto Score = gScore;
+
+    if (Score < 30)
+    {
+      ImGui::PushStyleColor(ImGuiCol_WindowBg, static_cast<ImVec4>(ImColor(255, 4, 4, 128)));
+    }
+
     ImGui::PushFont(gpFont30);
 
     DrawPanel(Things);
@@ -542,7 +557,13 @@ int main(int argc, char** argv)
 
     SendState(Things);
 
+    if (Score < 30)
+    {
+      ImGui::PopStyleColor();
+    }
+
     window.clear();
+
     ImGui::SFML::Render(window);
     window.display();
   }

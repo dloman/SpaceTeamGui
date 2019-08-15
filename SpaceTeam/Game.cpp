@@ -444,6 +444,8 @@ void Game::UpdateScore(bool Success)
   {
     mCurrentScore -= 1;
   }
+
+  SendScore();
 }
 
 //------------------------------------------------------------------------------
@@ -677,4 +679,24 @@ void Game::SendNewRound()
   }
 
   std::this_thread::sleep_for(15s);
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void Game::SendScore()
+{
+  boost::property_tree::ptree Tree;
+
+  Tree.put("score", mCurrentScore);
+
+  std::stringstream Stream;
+
+  boost::property_tree::write_json(Stream, Tree);
+
+  auto Bytes = Stream.str();
+
+  for (const auto& [Serial, pSession] : mSerialToSession)
+  {
+    pSession->Write(Bytes);
+  }
 }

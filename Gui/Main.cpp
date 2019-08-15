@@ -30,6 +30,7 @@ using namespace std::literals;
 
 std::unique_ptr<dl::tcp::Client<dl::tcp::Session>> gpClient;
 bool gWait = false;
+int gScore = 0;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -399,6 +400,10 @@ void OnJsonPacket(const std::string& Bytes)
 
     return;
   }
+  else if (const auto oValue = Tree.get_optional<uint64_t>("score"))
+  {
+    gScore = *oValue;
+  }
   gWait = false;
 }
 
@@ -485,9 +490,21 @@ int main(int argc, char** argv)
 
     ImGui::SFML::Update(window, deltaClock.restart());
 
+    if (gScore < 30)
+    {
+      ImGui::PushStyleColor(
+        ImGuiCol_WindowBg,
+        static_cast<ImVec4>(ImColor(255, 4, 4, 1)));
+    }
+
     DrawDataPanel();
     DrawTaskPanel();
     DrawGraphPanel();
+
+    if (gScore < 30)
+    {
+      ImGui::PopStyleColor();
+    }
 
     window.clear();
     ImGui::SFML::Render(window);
