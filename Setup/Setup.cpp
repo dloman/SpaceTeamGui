@@ -273,8 +273,7 @@ int main()
   std::vector<size_t> Leds;
 
   char Input;
-  //for (auto i = 0; i < 48; ++i)
-  for (auto i = 11; i < 14; ++i)
+  for (auto i = 0; i < 48; ++i)
   {
     testPin(i);
 
