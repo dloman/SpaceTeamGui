@@ -8,7 +8,7 @@
 #include <cstring>
 #include <chrono>
 #include <thread>
-
+#include <fmt/format.h>
 #include <iomanip>
 namespace
 {
@@ -110,7 +110,7 @@ void adcWriteConversionReg(uint8_t channel, ConversionReg_t* data)
    unsigned char buf[4];
    buf[1] = buf[2] = 0;
    buf[0] = data->data;
-   adcSPIDataRW(channel, buf, 3);
+   adcSPIDataRW(channel, buf, 2);
 }
 
 //------------------------------------------------------------------------------
@@ -141,36 +141,46 @@ void adcWriteResetReg(uint8_t channel, ResetReg_t* data)
    adcSPIDataRW(channel, buf, 1);
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-std::array<uint8_t, 16> adcReadFIFO(uint8_t channel)
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+std::array<uint8_t, 16> Decode(std::array<uint8_t, 32>& Buffer)
 {
-   std::array<uint8_t, 16> Output;
+  std::array<uint8_t, 16> Output;
 
-   adcWriteConversionReg(channel, &conversionData);
-   //512 conversion delay
-   std::this_thread::sleep_for(std::chrono::milliseconds(4));
+  for (size_t i = 0; i < 16; i++)
+  {
+    uint8_t High = *(Buffer.data() + (i*2));
+    uint8_t Low = *(Buffer.data() + (i*2) + 1);
 
-   std::array<uint8_t, 33> Buffer;
+    High <<= 4;
 
-   Buffer.fill(0);
+    Low >>= 4;
 
-   adcSPIDataRW(channel, Buffer.data(), 33);
+    Output[i] = High | Low;
+  }
 
-   for (size_t i = 0; i < 16; ++i)
-   {
-     int Temp = *(Buffer.data() + 2*i);
-
-     Temp<<=4;
-
-     Output[i] = Temp;
-   }
-
-   return Output;
+  return Output;
 }
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+std::array<uint8_t, 16> adcReadFIFO(uint8_t channel)
+{
+  adcWriteConversionReg(channel, &conversionData);
+  //512 conversion delay
+  std::this_thread::sleep_for(std::chrono::milliseconds(4));
+
+  std::array<uint8_t, 32> Buffer;
+
+  Buffer.fill(0);
+
+  adcSPIDataRW(channel, Buffer.data(), 32);
+
+  return Decode(Buffer);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void adcSetup(uint8_t channel)
 {
    //CPOL = CPHA = 0
@@ -207,7 +217,6 @@ void adcSetup(uint8_t channel)
    conversionData.bits.SCAN = 0; //Scans 0 through N channels
    conversionData.bits.CHSEL = 0x0F; //N = ANIN15
    adcWriteConversionReg(channel, &conversionData);
-
 }
 
 //------------------------------------------------------------------------------

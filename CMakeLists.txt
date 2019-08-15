@@ -46,7 +46,7 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 
 if(BUILD_RPI)
 
-  include_directories(Modules/asio/asio/include)
+  include_directories(SYSTEM Modules/asio/asio/include)
 
   add_subdirectory(Modules/DanLib EXCLUDE_FROM_ALL)
 

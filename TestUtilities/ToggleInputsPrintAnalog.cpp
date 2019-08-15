@@ -42,10 +42,10 @@ int main()
 
     PrintAnalogState();
 
-    std::this_thread::sleep_for(250ms);
+    std::this_thread::sleep_for(30ms);
 
     st::hw::setGPIOVal(std::numeric_limits<uint64_t>::max());
 
-    std::this_thread::sleep_for(250ms);
+    std::this_thread::sleep_for(30ms);
   }
 }

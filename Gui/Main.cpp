@@ -30,7 +30,7 @@ using namespace std::literals;
 
 std::unique_ptr<dl::tcp::Client<dl::tcp::Session>> gpClient;
 bool gWait = false;
-int gScore = 0;
+int gScore = 100;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -87,9 +87,7 @@ auto gLine2Data = GetData();
 auto gLine3Data = GetData();
 auto gFastUpdate = std::chrono::system_clock::now();
 auto gSlowUpdate = std::chrono::system_clock::now();
-auto gCoreTemp = GetRandomTemp();
 auto gSystemTemp = GetRandomTemp();
-auto gCabinTemp = GetRandomTemp();
 auto gToiletSeatTemp = GetRandomTemp();
 auto gWindowsUpdate = GetRandomTemp();
 auto gSelfDestruct = GetRandomTemp() > .5f;
@@ -172,6 +170,25 @@ void DoHardware()
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+void DrawHealthBar()
+{
+  ImGui::Begin(
+    "How F*cked are We?" ,
+    nullptr,
+    ImVec2(0, 0), 1.0f,
+    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
+
+  ImGui::SetWindowPos({0, 0});
+
+  ImGui::SetWindowSize({640, 50});
+
+  ImGui::ProgressBar(100*(gScore/150), {-1,0},"Space Shit Health%");
+
+  ImGui::End();
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void DrawDataPanel()
 {
   ImGui::Begin(
@@ -180,8 +197,8 @@ void DrawDataPanel()
     ImVec2(0, 0), 1.0f,
     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
-  ImGui::SetWindowPos({0, 0});
-  ImGui::SetWindowSize({280, 480});
+  ImGui::SetWindowPos({0, 53});
+  ImGui::SetWindowSize({280, 440});
   ImGui::Button("Flux Endonglanator", {-1,0});
 
   if (std::chrono::system_clock::now() - gFastUpdate > 1s)
@@ -202,8 +219,6 @@ void DrawDataPanel()
 
   if (std::chrono::system_clock::now() - gSlowUpdate > 3s)
   {
-    gCoreTemp = GetRandomTemp();
-    gCabinTemp = GetRandomTemp();
     gSystemTemp = GetRandomTemp();
     gToiletSeatTemp = GetRandomTemp();
     gWindowsUpdate = GetRandomTemp();
@@ -212,9 +227,6 @@ void DrawDataPanel()
   }
 
   ImGui::PlotHistogram("", gHistogram1Data.data(), gHistogram1Data.size(), 0, NULL, 0.0f, 1.0f, PlotSize);
-  ImGui::ProgressBar(gCoreTemp, {-1,0},"Core °C");
-
-  ImGui::ProgressBar(gCabinTemp, {-1,0},"Cabin °C");
 
   ImGui::ProgressBar(gToiletSeatTemp, {-1,0},"Toilet Seat °C");
   ImGui::ProgressBar(gWindowsUpdate, {-1,0},"Windows Update %");
@@ -261,9 +273,9 @@ void DrawTaskPanel()
     1.0f,
     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
-  ImGui::SetWindowSize({358, 240});
+  ImGui::SetWindowSize({358, 200});
 
-  ImGui::SetWindowPos({282, 0});
+  ImGui::SetWindowPos({282, 53});
 
   // Load Fonts
   ImGui::PushFont(gpFont15);
@@ -490,13 +502,14 @@ int main(int argc, char** argv)
 
     ImGui::SFML::Update(window, deltaClock.restart());
 
-    if (gScore < 30)
+    auto Score = gScore;
+
+    if (Score < 30)
     {
-      ImGui::PushStyleColor(
-        ImGuiCol_WindowBg,
-        static_cast<ImVec4>(ImColor(255, 4, 4, 1)));
+      ImGui::PushStyleColor(ImGuiCol_WindowBg, static_cast<ImVec4>(ImColor(255, 4, 4, 128)));
     }
 
+    DrawHealthBar();
     DrawDataPanel();
     DrawTaskPanel();
     DrawGraphPanel();
