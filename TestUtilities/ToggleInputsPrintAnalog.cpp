@@ -23,11 +23,11 @@ void PrintAnalogState()
 
   st::hw::adcReadFIFOAll(Analog);
 
-  for (const auto& Val : Analog)
-  {
-    fmt::print("{0:02x} ", Val);
-  }
-  fmt::print("\n");
+  //for (const auto& Val : Analog)
+  //{
+  //fmt::print("{0:02x} ", Val);
+  //}
+  //fmt::print("\n");
 }
 
 //------------------------------------------------------------------------------

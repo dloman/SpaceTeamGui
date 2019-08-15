@@ -8,6 +8,7 @@
 #include <cstring>
 #include <chrono>
 #include <thread>
+#include <bitset>
 
 #include <fmt/format.h>
 #include <iomanip>
@@ -152,21 +153,42 @@ std::array<uint8_t, 16> adcReadFIFO(uint8_t channel)
    //512 conversion delay
    std::this_thread::sleep_for(std::chrono::milliseconds(4));
 
-   std::array<uint8_t, 33> Buffer;
+   std::array<uint8_t, 36> Buffer;
 
    Buffer.fill(0);
 
-   adcSPIDataRW(channel, Buffer.data(), 33);
+   adcSPIDataRW(channel, Buffer.data(), 36);
 
-   for (size_t i = 0; i < 16; ++i)
+   std::array<uint8_t, 288> Bits;
+
+   size_t BitIndex = 0;
+
+   for (const auto& Value : Buffer)
    {
-     int Temp = *(Buffer.data() + 2*i);
+     fmt::print("{:2x}", Value);
 
-     Temp<<=4;
+     for (int i = 0; i < 8; ++i)
+     {
+       Bits[BitIndex] = ((Value << i) & 0x80)>>7;
 
-     Output[i] = Temp;
+       BitIndex++;
+     }
    }
 
+     fmt::print("\n");
+       static uint8_t magicOffset = 0;
+   for (int i = 0; i < 16; ++i)
+   {
+     for (int j = 0; j < 18; ++j)
+     {
+       if (magicOffset++ >= 6)
+          fmt::print("{}", Bits[j + (16*i)]);
+     }
+     fmt::print("\n");
+   }
+       magicOffset = 0;
+     fmt::print("\n");
+     fmt::print("\n");
    return Output;
 }
 
@@ -234,11 +256,12 @@ namespace st::hw
 
     (void)Init;
 
-     for(uint8_t i = 0; i < NUM_ADCS; i++)
+     for(uint8_t i = 0; i < 1; i++)
      {
-        auto Output = adcReadFIFO(i);
+        auto Output = adcReadFIFO(2);
 
         std::memcpy(Buffer.data() + (i * 16), Output.data(), 16);
      }
+     fmt::print("\n\n");
   }
 }
