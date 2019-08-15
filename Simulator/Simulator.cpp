@@ -341,14 +341,23 @@ void SendState(std::vector<DrawVariant>& Things)
 
         AnalogOutput[Input.mId.mButtonIndex.get()] = Input.mState;
       },
-      [&AnalogOutput](auto& Input)
+      [&AnalogOutput](sim::Momentary& Input)
       {
         if (Input.mPiSerial != GetSerial(gSerials[gCurrentIndex]))
         {
           return;
         }
 
-        AnalogOutput[Input.mId.mButtonIndex.get()] = Input.mState ? 0 : 255u;
+        AnalogOutput[Input.mId.mButtonIndex.get()] = Input.mState ? !Input.mDefaultValue : Input.mDefaultValue;
+      },
+      [&AnalogOutput](sim::Digital& Input)
+      {
+        if (Input.mPiSerial != GetSerial(gSerials[gCurrentIndex]))
+        {
+          return;
+        }
+
+        AnalogOutput[Input.mId.mButtonIndex.get()] = Input.mState ? 255u : 0;
       }},
       DrawVariant);
   }
