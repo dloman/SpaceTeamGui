@@ -514,7 +514,7 @@ int main(int argc, char** argv)
     DrawTaskPanel();
     DrawGraphPanel();
 
-    if (gScore < 30)
+    if (Score < 30)
     {
       ImGui::PopStyleColor();
     }

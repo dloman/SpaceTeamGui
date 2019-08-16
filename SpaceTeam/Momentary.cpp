@@ -33,7 +33,6 @@ const std::string& Momentary::GetNewCommand(st::SerialId Serial)
 //------------------------------------------------------------------------------
 static bool IsPressed(uint8_t Rhs, uint8_t Lhs)
 {
-  //fmt::print("{0:02x} ", Val);
   return std::abs(static_cast<int>(Rhs) - static_cast<int>(Lhs)) > 200;
 }
 
@@ -80,7 +79,10 @@ void Momentary::IsCorrect(st::Success& Success)
     return;
   }
 
-  if (WasPressed())
+  auto Pressed = WasPressed();
+  fmt::print("sometimes? {} {}\n", Pressed, mMessage);
+
+  if (Pressed)
   {
     mLastToggle = system_clock::now();
 
