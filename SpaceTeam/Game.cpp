@@ -135,7 +135,7 @@ namespace
   std::unordered_map<st::SerialId, std::shared_ptr<dl::tcp::Session>> GetSerialToSessions(
     const std::vector<std::unique_ptr<st::Panel>>& Panels)
   {
-    while (ArePanelsReady(Panels))
+    while (!ArePanelsReady(Panels))
     {
       std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
