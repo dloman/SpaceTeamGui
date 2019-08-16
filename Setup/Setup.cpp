@@ -20,7 +20,7 @@ using namespace std::literals::chrono_literals;
 void testPin(size_t Index)
 {
   fmt::print("Printing Pin {}\n", Index);
-  std::bitset<64> Value(0);
+  std::bitset<64> Value(std::numeric_limits<uint64_t>::max());
 
   for (int i = 0; i < 10; ++i)
   {
@@ -31,7 +31,7 @@ void testPin(size_t Index)
     std::this_thread::sleep_for(250ms);
   }
 
-  st::hw::setGPIOVal(0);
+  st::hw::setGPIOVal(std::numeric_limits<uint64_t>::max());
 }
 
 //------------------------------------------------------------------------------
@@ -230,14 +230,26 @@ boost::property_tree::ptree GetDigitalInput(uint64_t Led, uint64_t Pin)
 
   auto GetLabel = [] (bool State) { return State ? "On Label" : "Off Label"; };
 
-  std::bitset<64> State(st::hw::getGPIOVal());
+  std::array<uint8_t, 48> Analog;
 
-  Input.put(GetLabel(State[Pin]), Data);
+  st::hw::adcReadFIFOAll(Analog);
+
+  Input.put(GetLabel(Analog[Pin] > 128), Data);
 
   fmt::print("Flip state\n");
 
-  while (State[Pin] == std::bitset<64>(st::hw::getGPIOVal())[Pin])
+  std::array<uint8_t, 48> FlippedAnalog;
+
+  bool isFlipped = false;
+
+  while (!isFlipped)
   {
+    st::hw::adcReadFIFOAll(FlippedAnalog);
+
+    if (std::abs(static_cast<int>(Analog[Pin]) - static_cast<int>(FlippedAnalog[Pin])) > 150)
+    {
+      isFlipped = true;
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
@@ -262,7 +274,7 @@ boost::property_tree::ptree GetDigitalInput(uint64_t Led, uint64_t Pin)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-int main()
+int main(int argc, char** argv)
 {
   gPiSerial = fmt::format("00000000{:x}", GetSerialNumber());
 
@@ -275,24 +287,45 @@ int main()
   std::vector<size_t> Leds;
 
   char Input;
-  for (auto i = 0; i < 48; ++i)
+
+  fmt::print("argc = {}\n", argc);
+
+  if (argc == 2)
   {
-    testPin(i);
+    auto StartingIndex = std::atoi(argv[1]);
 
-    fmt::print("Did something happen? Press y if something did. Press r to retry\n");
+    std::vector<int> HardCodedLeds = {
+      2,3,4,5,6,10,12,13,14,15,16,17,22,25,26,27,28,29,30,31,32,33,37,38,39};
 
-    std::cin >> Input;
 
-    if (Input == 'y')
+    for (size_t i = StartingIndex; i < HardCodedLeds.size();++i)
     {
-      fmt::print("woot\n");
-
-      Leds.emplace_back(i);
+      Leds.emplace_back(HardCodedLeds[i]);
     }
-    else if (Input == 'r')
+  }
+  else
+  {
+    for (auto i = 0; i < 48; ++i)
     {
-      --i;
+      testPin(i);
+
+      fmt::print("Did something happen? Press y if something did. Press r to retry\n");
+
+      std::cin >> Input;
+
+      if (Input == 'y')
+      {
+        fmt::print("woot\n");
+
+        Leds.emplace_back(i);
+      }
+      else if (Input == 'r')
+      {
+        --i;
+      }
+
     }
+      fmt::print("found {} of 25\n", Leds.size());
   }
 
   std::bitset<64> Bits(std::numeric_limits<uint64_t>::max());
@@ -308,9 +341,16 @@ int main()
 
   for (const auto Led : Leds)
   {
-    std::bitset<64> Value(0);
+    fmt::print("{},", Led);
+  }
 
-    Value[Led] = true;
+  fmt::print("\n");
+
+  for (const auto Led : Leds)
+  {
+    std::bitset<64> Value(std::numeric_limits<uint64_t>::max());
+
+    Value[Led] = false;
 
     st::hw::setGPIOVal(Value.to_ullong());
 
@@ -347,6 +387,8 @@ int main()
       {
         Tree.add_child(Label, IoTree);
       }
+
+      boost::property_tree::write_json("Config.json", Tree);
     }
 
   }
