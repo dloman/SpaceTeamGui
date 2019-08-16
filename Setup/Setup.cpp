@@ -20,7 +20,7 @@ using namespace std::literals::chrono_literals;
 void testPin(size_t Index)
 {
   fmt::print("Printing Pin {}\n", Index);
-  std::bitset<64> Value(0);
+  std::bitset<64> Value(std::numeric_limits<uint64_t>::max());
 
   for (int i = 0; i < 10; ++i)
   {
@@ -31,7 +31,7 @@ void testPin(size_t Index)
     std::this_thread::sleep_for(250ms);
   }
 
-  st::hw::setGPIOVal(0);
+  st::hw::setGPIOVal(std::numeric_limits<uint64_t>::max());
 }
 
 //------------------------------------------------------------------------------
@@ -99,7 +99,9 @@ boost::property_tree::ptree GetMomentaryInput(uint64_t Led, uint64_t Pin)
 
   std::this_thread::sleep_for(1s);
 
-  std::bitset<64> Bits(st::hw::getGPIOVal());
+  std::array<uint8_t, 48> Bits;
+
+  st::hw::adcReadFIFOAll(Bits);
 
   Input.put("Default Value", static_cast<int>(Bits[Pin]));
 
@@ -228,14 +230,26 @@ boost::property_tree::ptree GetDigitalInput(uint64_t Led, uint64_t Pin)
 
   auto GetLabel = [] (bool State) { return State ? "On Label" : "Off Label"; };
 
-  std::bitset<64> State(st::hw::getGPIOVal());
+  std::array<uint8_t, 48> Analog;
 
-  Input.put(GetLabel(State[Pin]), Data);
+  st::hw::adcReadFIFOAll(Analog);
+
+  Input.put(GetLabel(Analog[Pin] > 128), Data);
 
   fmt::print("Flip state\n");
 
-  while (State[Pin] == std::bitset<64>(st::hw::getGPIOVal())[Pin])
+  std::array<uint8_t, 48> FlippedAnalog;
+
+  bool isFlipped = false;
+
+  while (!isFlipped)
   {
+    st::hw::adcReadFIFOAll(FlippedAnalog);
+
+    if (std::abs(static_cast<int>(Analog[Pin]) - static_cast<int>(FlippedAnalog[Pin])) > 150)
+    {
+      isFlipped = true;
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
@@ -273,8 +287,8 @@ int main()
   std::vector<size_t> Leds;
 
   char Input;
-  //for (auto i = 0; i < 48; ++i)
-  for (auto i = 11; i < 14; ++i)
+/*
+  for (auto i = 0; i < 48; ++i)
   {
     testPin(i);
 
@@ -292,9 +306,13 @@ int main()
     {
       --i;
     }
-  }
+
+    fmt::print(found {} of 25\n");
+  }*/
 
   std::bitset<64> Bits(std::numeric_limits<uint64_t>::max());
+
+  Leds = {2,3,4,5,6,10,14,15,16,17,24,25,26,27,28,29,30,31,32,33,35,37,38,39};
 
   for (const auto Led : Leds)
   {
@@ -307,9 +325,16 @@ int main()
 
   for (const auto Led : Leds)
   {
-    std::bitset<64> Value(0);
+    fmt::print("{},", Led);
+  }
 
-    Value[Led] = true;
+  fmt::print("\n");
+
+  for (const auto Led : Leds)
+  {
+    std::bitset<64> Value(std::numeric_limits<uint64_t>::max());
+
+    Value[Led] = false;
 
     st::hw::setGPIOVal(Value.to_ullong());
 
