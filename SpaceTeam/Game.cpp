@@ -191,8 +191,25 @@ void Game::GetNextRoundInputs()
     return RoundSize;
   }();
 
+  std::unordered_set<st::SerialId> ToggleSerials;
+  for (auto& InputVariant : mInputs)
+  {
+    auto GetSerial = [] (auto& InputVariant)
+    {
+      return std::visit(
+        [] (auto& Input) { return Input.GetPiSerial(); },
+        InputVariant);
+    };
+    ToggleSerials.insert(GetSerial(InputVariant));
+  }
+
+  for (const auto& Serial : ToggleSerials)
+  {
+    fmt::print("input Serial {}\n", Serial);
+  }
   for (const auto& [SerialNumber, pSession] : mSerialToSession)
   {
+    fmt::print("session Serial {}\n", SerialNumber);
     std::vector<std::reference_wrapper<InputVariant>> PanelInputs;
 
     auto GetSerial = [] (auto& InputVariant)

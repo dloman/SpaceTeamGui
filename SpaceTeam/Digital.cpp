@@ -46,7 +46,7 @@ std::string Digital::GetNewCommand(st::SerialId Serial)
 {
   mIsActive = Serial;
 
-  mDesiredState = !mCurrentState;
+  mDesiredState = mCurrentState < 40 ? 255u : 0u;
 
   return fmt::format("{} {} to {}",
     GetVerb(),
@@ -58,32 +58,42 @@ std::string Digital::GetNewCommand(st::SerialId Serial)
 //-----------------------------------------------------------------------------
 bool Digital::IsInCorrectState() const
 {
-  return (mCurrentState == mDesiredState);
+  return std::abs(
+    static_cast<int>(mCurrentState) - static_cast<int>(mDesiredState)) < 30;
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void Digital::IsCorrect(st::Success& Success)
 {
+  const auto Updates = std::move(mUpdates);
+
+  if (Updates.empty())
+  {
+    return;
+  }
+
+  mCurrentState = std::accumulate(Updates.begin(), Updates.end(), 0)/ Updates.size();
+
   const auto Correct = IsInCorrectState();
 
   if (mIsActive)
   {
-    if (IsInCorrectState())
+    if (Correct)
     {
       Success.mIsActiveCompleted.insert(*mIsActive);
 
       mIsActive = std::nullopt;
 
-      mDesiredState = mCurrentState;
-    fmt::print("dddddsucess\n");
+      mDesiredState = mCurrentState < 40 ? 0u : 255u;
+      fmt::print("dddddsucess\n");
     }
     return;
   }
 
   if (!Correct)
   {
-    mDesiredState = mCurrentState;
+    mDesiredState = mCurrentState < 40 ? 0u : 255u;
 
     Success.mInactiveFailCount++;
 
@@ -95,14 +105,14 @@ void Digital::IsCorrect(st::Success& Success)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void Digital::SetCurrentState(bool State)
+void Digital::SetCurrentState(uint8_t State)
 {
   mCurrentState = State;
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool Digital::GetCurrentState() const
+uint8_t Digital::GetCurrentState() const
 {
   return mCurrentState;
 }
@@ -118,7 +128,7 @@ void Digital::Update(const st::Update& Update)
     return;
   }
 
-  mCurrentState = static_cast<bool>(Update.mValue);
+  mUpdates.push_back(Update.mValue);
 }
 
 //-----------------------------------------------------------------------------

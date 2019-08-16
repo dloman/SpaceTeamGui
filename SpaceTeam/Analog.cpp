@@ -121,6 +121,13 @@ const st::Threshold& Analog::GetThreshold(uint8_t Value) const
 
   if (iThreshold == mThresholds.end())
   {
+    for (auto& y : mThresholds)
+    {
+      fmt::print("starting thresholds {} {} {}\n", y.mLabel, y.mStart, y.mStop);
+    }
+
+    fmt::print("value = {} \n", Value);
+
     throw std::logic_error("unreachable");
   }
 
