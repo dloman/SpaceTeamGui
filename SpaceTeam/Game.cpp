@@ -116,9 +116,30 @@ namespace
 
   //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
+  bool ArePanelsReady(
+    const std::vector<std::unique_ptr<st::Panel>>& Panels)
+  {
+    for (const auto& pPanel : Panels)
+    {
+      auto oSerial = pPanel->GetSerial();
+      if (!oSerial)
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
   std::unordered_map<st::SerialId, std::shared_ptr<dl::tcp::Session>> GetSerialToSessions(
     const std::vector<std::unique_ptr<st::Panel>>& Panels)
   {
+    while (ArePanelsReady(Panels))
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+
     std::unordered_map<st::SerialId, std::shared_ptr<dl::tcp::Session>> SerialToSession;
 
     for (const auto& pPanel : Panels)
@@ -191,25 +212,8 @@ void Game::GetNextRoundInputs()
     return RoundSize;
   }();
 
-  std::unordered_set<st::SerialId> ToggleSerials;
-  for (auto& InputVariant : mInputs)
-  {
-    auto GetSerial = [] (auto& InputVariant)
-    {
-      return std::visit(
-        [] (auto& Input) { return Input.GetPiSerial(); },
-        InputVariant);
-    };
-    ToggleSerials.insert(GetSerial(InputVariant));
-  }
-
-  for (const auto& Serial : ToggleSerials)
-  {
-    fmt::print("input Serial {}\n", Serial);
-  }
   for (const auto& [SerialNumber, pSession] : mSerialToSession)
   {
-    fmt::print("session Serial {}\n", SerialNumber);
     std::vector<std::reference_wrapper<InputVariant>> PanelInputs;
 
     auto GetSerial = [] (auto& InputVariant)
@@ -424,11 +428,11 @@ st::Success Game::GetSuccess()
 {
   st::Success Success;
 
-  for(auto& InputVariant : mCurrentRoundInputs)
+  for(auto& InputVariant : mInputs)
   {
     std::visit(
       [&Success] (auto& Input) { return Input.IsCorrect(Success); },
-      InputVariant.get());
+      InputVariant);
   }
 
   return Success;
