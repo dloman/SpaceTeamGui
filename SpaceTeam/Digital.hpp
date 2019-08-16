@@ -17,9 +17,9 @@ namespace st
 
       void IsCorrect(st::Success&);
 
-      void SetCurrentState(bool State);
+      void SetCurrentState(uint8_t State);
 
-      bool GetCurrentState() const;
+      uint8_t GetCurrentState() const;
 
       void Update(const st::Update&);
 
@@ -31,12 +31,14 @@ namespace st
 
       bool IsInCorrectState() const;
 
-      bool mDesiredState;
+      uint8_t mDesiredState;
 
-      bool mCurrentState;
+      uint8_t mCurrentState;
 
       const std::string mOnLabel;
 
       const std::string mOffLabel;
+
+      std::vector<uint8_t> mUpdates;
   };
 }

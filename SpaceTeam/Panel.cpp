@@ -40,7 +40,7 @@ Panel::Panel(std::shared_ptr<dl::tcp::Session>& pSession)
           moSerial = Serial;
         }
 
-        std::array<uint8_t, 24> Data;
+        std::array<uint8_t, 48> Data;
 
         std::memcpy(Data.data(), Bytes.data() + 9, Data.size());
 

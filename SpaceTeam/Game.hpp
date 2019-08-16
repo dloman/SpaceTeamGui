@@ -18,7 +18,7 @@ namespace st
 {
   using InputVariant = std::variant<st::Analog, st::Digital, st::Momentary>;
 
-  constexpr int StartingScore = 100;
+  constexpr int StartingScore = 50;
 
   struct Success;
   class Panel;

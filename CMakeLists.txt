@@ -171,22 +171,25 @@ target_link_libraries(
   ${CMAKE_THREAD_LIBS_INIT}
   )
 
-add_executable(
-  Simulator
-  Simulator/Simulator.cpp
-  )
+if(!BUILD_RPI)
 
-target_link_libraries(
-  Simulator
-  SpaceTeam
-  SpaceTeamUtility
-  imgui-sfml
-  DanLibTcp
-  ${SFML_LIBRARIES}
-  ${OpenGL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  )
+  add_executable(
+    Simulator
+    Simulator/Simulator.cpp
+    )
 
+  target_link_libraries(
+    Simulator
+    SpaceTeam
+    SpaceTeamUtility
+    imgui-sfml
+    DanLibTcp
+    ${SFML_LIBRARIES}
+    ${OpenGL_LIBRARIES}
+    ${CMAKE_THREAD_LIBS_INIT}
+    )
+
+endif()
 add_executable(
   ConfigFileGenerator
   Setup/Setup.cpp
