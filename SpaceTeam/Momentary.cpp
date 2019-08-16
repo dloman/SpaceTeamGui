@@ -9,7 +9,7 @@ using st::Momentary;
 //-----------------------------------------------------------------------------
 Momentary::Momentary(const boost::property_tree::ptree& Tree)
 : Input(Tree),
-  mDefaultValue(Tree.get<double>("Default Value")),
+  mDefaultValue(Tree.get<uint8_t>("Default Value")),
   mMessage(Tree.get<std::string>("Message")),
   mCurrentState(mDefaultValue),
   mLastToggle(std::chrono::milliseconds(0))
@@ -29,16 +29,23 @@ const std::string& Momentary::GetNewCommand(st::SerialId Serial)
   return mMessage;
 }
 
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+static bool IsClose(uint8_t Rhs, uint8_t Lhs)
+{
+  return std::abs(static_cast<int>(Rhs) - static_cast<int>(Lhs)) > 210;
+}
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 bool Momentary::WasPressed()
 {
   const auto Updates = std::move(mUpdates);
 
-  for (const bool State : Updates)
+  for (const auto State : Updates)
   {
-
-    if (State != mDefaultValue)
+    fmt::print("{:2x}, {:2x}\n", State, mDefaultValue);
+    if (IsClose(State, mDefaultValue))
     {
       return true;
     }
@@ -88,7 +95,7 @@ void Momentary::IsCorrect(st::Success& Success)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void Momentary::SetCurrentState(bool State)
+void Momentary::SetCurrentState(uint8_t State)
 {
   mCurrentState = State;
 }
@@ -104,7 +111,7 @@ void Momentary::Update(const st::Update& Update)
     return;
   }
 
-  mUpdates.push_back(static_cast<bool>(Update.mValue));
+  mUpdates.push_back(Update.mValue);
 }
 
 //-----------------------------------------------------------------------------

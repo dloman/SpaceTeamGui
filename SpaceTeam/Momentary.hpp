@@ -18,7 +18,7 @@ namespace st
 
       void IsCorrect(st::Success&);
 
-      void SetCurrentState(bool State);
+      void SetCurrentState(uint8_t State);
 
       void Update(const st::Update&);
 
@@ -30,13 +30,13 @@ namespace st
 
       bool WasPressed();
 
-      const bool mDefaultValue;
+      const uint8_t mDefaultValue;
 
       const std::string mMessage;
 
-      bool mCurrentState;
+      uint8_t mCurrentState;
 
-      std::vector<bool> mUpdates;
+      std::vector<uint8_t> mUpdates;
 
       mutable std::chrono::time_point<std::chrono::system_clock> mLastToggle;
   };

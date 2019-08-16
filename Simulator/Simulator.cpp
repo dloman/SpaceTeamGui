@@ -363,7 +363,10 @@ void SendState(std::vector<DrawVariant>& Things)
       DrawVariant);
   }
 
-  gpClient->Write(SerializeAnalog(AnalogOutput));
+  if (gpClient)
+  {
+    gpClient->Write(SerializeAnalog(AnalogOutput));
+  }
 }
 
 //------------------------------------------------------------------------------

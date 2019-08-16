@@ -274,7 +274,7 @@ boost::property_tree::ptree GetDigitalInput(uint64_t Led, uint64_t Pin)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-int main()
+int main(int argc, char** argv)
 {
   gPiSerial = fmt::format("00000000{:x}", GetSerialNumber());
 
@@ -287,32 +287,35 @@ int main()
   std::vector<size_t> Leds;
 
   char Input;
-/*
-  for (auto i = 0; i < 48; ++i)
+
+  if (argc < 1)
   {
-    testPin(i);
-
-    fmt::print("Did something happen? Press y if something did. Press r to retry\n");
-
-    std::cin >> Input;
-
-    if (Input == 'y')
+    for (auto i = 0; i < 48; ++i)
     {
-      fmt::print("woot\n");
+      testPin(i);
 
-      Leds.emplace_back(i);
-    }
-    else if (Input == 'r')
-    {
-      --i;
-    }
+      fmt::print("Did something happen? Press y if something did. Press r to retry\n");
 
-    fmt::print(found {} of 25\n");
-  }*/
+      std::cin >> Input;
+
+      if (Input == 'y')
+      {
+        fmt::print("woot\n");
+
+        Leds.emplace_back(i);
+      }
+      else if (Input == 'r')
+      {
+        --i;
+      }
+
+      fmt::print("found {} of 25\n");
+    }
+  }
 
   std::bitset<64> Bits(std::numeric_limits<uint64_t>::max());
 
-  Leds = {2,3,4,5,6,10,14,15,16,17,24,25,26,27,28,29,30,31,32,33,35,37,38,39};
+  //Leds = {2,3,4,5,6,10,14,15,16,17,24,25,26,27,28,29,30,31,32,33,35,37,38,39};
 
   for (const auto Led : Leds)
   {
