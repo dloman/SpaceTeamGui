@@ -182,7 +182,7 @@ void DrawHealthBar()
 
   ImGui::SetWindowSize({640, 50});
 
-  ImGui::ProgressBar(100*(gScore/150), {-1,0},"Space Shit Health%");
+  ImGui::ProgressBar((static_cast<double>(gScore)/ 100.0), {-1,0},"Space Shit Health%");
 
   ImGui::End();
 }
