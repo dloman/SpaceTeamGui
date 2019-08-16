@@ -306,7 +306,7 @@ void DrawTaskPanel()
     float Progress = duration_cast<seconds>(
       system_clock::now() - gTextUpdate).count() / 20.0;
 
-    ImGui::SetCursorPos({0, 200});
+    ImGui::SetCursorPos({0, 150});
 
     ImGui::PushFont(gpFont30);
 

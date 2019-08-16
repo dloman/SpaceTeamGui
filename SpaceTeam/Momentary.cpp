@@ -80,13 +80,12 @@ void Momentary::IsCorrect(st::Success& Success)
   }
 
   auto Pressed = WasPressed();
-  fmt::print("sometimes? {} {}\n", Pressed, mMessage);
 
   if (Pressed)
   {
     mLastToggle = system_clock::now();
 
-    fmt::print("momentary fail\n");
+    fmt::print("momentary fail {} \n", mMessage);
     Success.mInactiveFailCount++;
   }
 

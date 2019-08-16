@@ -33,8 +33,8 @@ namespace
 //-----------------------------------------------------------------------------
 Digital::Digital(const boost::property_tree::ptree& Tree)
 : Input(Tree),
-  mDesiredState(false),
-  mCurrentState(false),
+  mDesiredState(0u),
+  mCurrentState(0u),
   mOnLabel(Tree.get<std::string>("On Label")),
   mOffLabel(Tree.get<std::string>("Off Label"))
 {
@@ -73,7 +73,7 @@ void Digital::IsCorrect(st::Success& Success)
     return;
   }
 
-  mCurrentState = std::accumulate(Updates.begin(), Updates.end(), 0)/ Updates.size();
+  mCurrentState = std::accumulate(Updates.begin(), Updates.end(), 0u)/ Updates.size();
 
   const auto Correct = IsInCorrectState();
 
@@ -86,18 +86,20 @@ void Digital::IsCorrect(st::Success& Success)
       mIsActive = std::nullopt;
 
       mDesiredState = mCurrentState < 40 ? 0u : 255u;
-      fmt::print("dddddsucess\n");
+      fmt::print("dddddsucess\n {}", mLabel);
     }
     return;
   }
 
   if (!Correct)
   {
-    mDesiredState = mCurrentState < 40 ? 0u : 255u;
+    fmt::print("desired fail\n {:02x} {:02x}", mDesiredState, mCurrentState);
+
+    mDesiredState = mCurrentState;
+
+    fmt::print("ddddd fail\n {}", mLabel);
 
     Success.mInactiveFailCount++;
-
-    fmt::print("ddddfail {} \n", mLabel);
   }
 
   return;
@@ -128,7 +130,7 @@ void Digital::Update(const st::Update& Update)
     return;
   }
 
-  mUpdates.push_back(Update.mValue);
+  mUpdates.push_back(Update.mValue & 0xF0);
 }
 
 //-----------------------------------------------------------------------------

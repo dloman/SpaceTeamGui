@@ -77,6 +77,18 @@ void OnError(const std::string& Error)
   std::cerr << "Error = " << Error << std::endl;
 }
 
+static bool HasSerials(std::vector<std::unique_ptr<st::Panel>>& Panels)
+{
+  for (const auto& pPanel : Panels)
+  {
+    if(!pPanel->GetSerial())
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 st::Game GetGameStart(
@@ -95,8 +107,9 @@ st::Game GetGameStart(
   {
     std::lock_guard Lock(Mutex);
 
-    if (Panels.size() == 2)
+    if (Panels.size() == 2 && HasSerials(Panels))
     {
+      std::this_thread::sleep_for(std::chrono::seconds(1));
       Temp = false;
     }
   }
