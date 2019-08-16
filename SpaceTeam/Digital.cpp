@@ -97,7 +97,7 @@ void Digital::IsCorrect(st::Success& Success)
 
     Success.mInactiveFailCount++;
 
-    fmt::print("ddddfail\n");
+    fmt::print("ddddfail {} \n", mLabel);
   }
 
   return;

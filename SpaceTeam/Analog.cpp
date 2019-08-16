@@ -83,9 +83,9 @@ void Analog::IsCorrect(st::Success& Success)
 
   mCurrentState = mUpdateSum / mUpdateCount;
 
-  mUpdateCount = mUpdateSum = 0;
-
   const auto IsInCorrectState = GetIsInCorrectState();
+
+  mUpdateCount = mUpdateSum = 0;
 
   if (mIsActive)
   {
@@ -126,9 +126,9 @@ const st::Threshold& Analog::GetThreshold(uint8_t Value) const
       fmt::print("starting thresholds {} {} {}\n", y.mLabel, y.mStart, y.mStop);
     }
 
-    fmt::print("value = {} \n", Value);
+    fmt::print("value = {} {} \n", Value, mLabel);
 
-    throw std::logic_error("unreachable");
+    throw std::logic_error(fmt::format("unreachable {} Line :{}", __FILE__, __LINE__));
   }
 
   return *iThreshold;

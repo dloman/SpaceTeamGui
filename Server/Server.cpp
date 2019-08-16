@@ -209,7 +209,7 @@ int main()
 
       return 1;
     }
-    else if (CurrentScore >= 150)
+    else if (CurrentScore >= 100)
     {
       Game.SendNewRound();
     }
