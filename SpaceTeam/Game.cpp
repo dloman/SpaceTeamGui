@@ -720,6 +720,7 @@ void Game::SendScore(const std::unordered_set<st::SerialId>& Fails)
     std::stringstream Stream;
 
     boost::property_tree::write_json(Stream, Tree);
+    boost::property_tree::write_json(std::cout, Tree);
 
     auto Bytes = Stream.str();
 
