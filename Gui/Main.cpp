@@ -32,6 +32,9 @@ std::unique_ptr<dl::tcp::Client<dl::tcp::Session>> gpClient;
 bool gWait = false;
 int gScore = 100;
 
+bool gFail = false;
+auto gFailTime = std::chrono::system_clock::now();
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 std::array<float, 8> GetData()
@@ -351,6 +354,28 @@ void DrawGraphPanel()
   ImGui::End();
 }
 
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void DrawFail()
+{
+  fmt::print("trying to draw error\n");
+  ImGui::Begin(
+    "ERROR!1!!!",
+    nullptr,
+    ImVec2(0, 0),
+    1.0f,
+    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
+
+  ImGui::SetWindowSize({100, 110});
+
+  ImGui::SetWindowPos({200, 350});
+
+  ImGui::Text("ERRRO!!! WTF did you do?");
+
+  ImGui::End();
+}
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 void SendState(const std::string& State)
@@ -416,9 +441,14 @@ void OnJsonPacket(const std::string& Bytes)
   {
     gScore = *oValue;
 
-    if (const auto oSerial = Tree.get_optional<uint64_t>("serial"))
+    if (const auto oSerial = Tree.get_optional<uint64_t>("fail"))
     {
-      fmt::print("fail\n");
+      if (*oSerial == gSerialNumber)
+      {
+        gFail = true;
+
+        gFailTime = std::chrono::system_clock::now();
+      }
     }
   }
   gWait = false;
@@ -522,6 +552,13 @@ int main(int argc, char** argv)
     if (Score < 30)
     {
       ImGui::PopStyleColor();
+    }
+
+    if (gFail && std::chrono::system_clock::now() - gFailTime < 1s)
+    {
+      DrawFail();
+
+      gFail = false;
     }
 
     window.clear();
