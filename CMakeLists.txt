@@ -171,8 +171,6 @@ target_link_libraries(
   ${CMAKE_THREAD_LIBS_INIT}
   )
 
-if(!BUILD_RPI)
-
   add_executable(
     Simulator
     Simulator/Simulator.cpp
@@ -189,7 +187,6 @@ if(!BUILD_RPI)
     ${CMAKE_THREAD_LIBS_INIT}
     )
 
-endif()
 add_executable(
   ConfigFileGenerator
   Setup/Setup.cpp

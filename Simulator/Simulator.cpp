@@ -76,7 +76,8 @@ namespace
         return Output.mId;
       }
     }
-    throw std::logic_error("no output found");
+    throw std::logic_error(
+      fmt::format("no output found {} {}", Id.mButtonIndex, Serial));
   }
 
   //------------------------------------------------------------------------------
@@ -266,7 +267,7 @@ void DrawPanel(std::vector<DrawVariant>& Things)
     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
   ImGui::SetWindowPos({0, 0});
-  ImGui::SetWindowSize({1600, 800});
+  ImGui::SetWindowSize({1600, 1800});
 
   MakeCombo("Panel Selector", gCurrentIndex, gSerials);
 
@@ -282,7 +283,7 @@ void DrawPanel(std::vector<DrawVariant>& Things)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-std::string SerializeAnalog(std::array<uint8_t, 24>& AnalogOutput)
+std::string SerializeAnalog(std::array<uint8_t, 48>& AnalogOutput)
 {
   std::stringstream Stream;
 
@@ -326,7 +327,7 @@ void SendState(std::vector<DrawVariant>& Things)
 {
   std::string Bytes;
 
-  std::array<uint8_t, 24> AnalogOutput;
+  std::array<uint8_t, 48> AnalogOutput;
 
   AnalogOutput.fill(0);
 

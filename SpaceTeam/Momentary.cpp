@@ -31,10 +31,10 @@ const std::string& Momentary::GetNewCommand(st::SerialId Serial)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-static bool IsClose(uint8_t Rhs, uint8_t Lhs)
+static bool IsPressed(uint8_t Rhs, uint8_t Lhs)
 {
   //fmt::print("{0:02x} ", Val);
-  return std::abs(static_cast<int>(Rhs) - static_cast<int>(Lhs)) > 210;
+  return std::abs(static_cast<int>(Rhs) - static_cast<int>(Lhs)) > 200;
 }
 
 //-----------------------------------------------------------------------------
@@ -45,7 +45,7 @@ bool Momentary::WasPressed()
 
   for (const auto State : Updates)
   {
-    if (IsClose(State, mDefaultValue))
+    if (IsPressed(State, mDefaultValue))
     {
       return true;
     }
