@@ -359,20 +359,23 @@ void DrawGraphPanel()
 //------------------------------------------------------------------------------
 void DrawFail()
 {
-  fmt::print("trying to draw error\n");
+  ImGui::PushStyleColor(ImGuiCol_WindowBg, static_cast<ImVec4>(ImColor(255, 0, 0, 255)));
+  ImGui::PushFont(gpFont30);
   ImGui::Begin(
-    "ERROR!1!!!",
+    "      !!!?!!!ERROR!1!!!",
     nullptr,
     ImVec2(0, 0),
     1.0f,
     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
-  ImGui::SetWindowSize({100, 110});
+  ImGui::SetWindowSize({500, 130});
 
-  ImGui::SetWindowPos({200, 350});
+  ImGui::SetWindowPos({75, 250});
 
-  ImGui::Text("ERRRO!!! WTF did you do?");
+  ImGui::Text("ERROR!!! WTF did you do?");
 
+  ImGui::PopFont();
+  ImGui::PopStyleColor();
   ImGui::End();
 }
 
