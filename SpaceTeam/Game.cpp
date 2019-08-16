@@ -391,12 +391,12 @@ void Game::UpdateCurrentState(st::UpdateVec& Updates)
     UpdateScore(true);
   }
 
-  if (Success.mInactiveFailCount > 0)
+  if (!Success.mInactiveFails.empty())
   {
     fmt::print("fail\n");
     fmt::print("score = {}\n", GetCurrentScore());
 
-    UpdateScore(false);
+    UpdateScore(false, Success.mInactiveFails);
   }
 
   for (const auto& [Serial, pSession] : mSerialToSession)
@@ -417,7 +417,7 @@ void Game::UpdateCurrentState(st::UpdateVec& Updates)
 
       SendReset(Serial, *pSession);
 
-      UpdateScore(false);
+      UpdateScore(false, {Serial});
     }
   }
 }
@@ -455,7 +455,7 @@ std::chrono::time_point<std::chrono::system_clock> Game::GetLastResetTime(
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void Game::UpdateScore(bool Success)
+void Game::UpdateScore(bool Success, const std::unordered_set<st::SerialId>& InactiveFails)
 {
   if (Success)
   {
@@ -466,7 +466,7 @@ void Game::UpdateScore(bool Success)
     mCurrentScore -= 1;
   }
 
-  SendScore();
+  SendScore(InactiveFails);
 }
 
 //------------------------------------------------------------------------------
@@ -704,20 +704,25 @@ void Game::SendNewRound()
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-void Game::SendScore()
+void Game::SendScore(const std::unordered_set<st::SerialId>& Fails)
 {
-  boost::property_tree::ptree Tree;
-
-  Tree.put("score", mCurrentScore);
-
-  std::stringstream Stream;
-
-  boost::property_tree::write_json(Stream, Tree);
-
-  auto Bytes = Stream.str();
-
   for (const auto& [Serial, pSession] : mSerialToSession)
   {
+    boost::property_tree::ptree Tree;
+
+    Tree.put("score", mCurrentScore);
+
+    if (Fails.count(Serial))
+    {
+      Tree.put("fail", Serial.get());
+    }
+
+    std::stringstream Stream;
+
+    boost::property_tree::write_json(Stream, Tree);
+
+    auto Bytes = Stream.str();
+
     pSession->Write(Bytes);
   }
 }

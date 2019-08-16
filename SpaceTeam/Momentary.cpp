@@ -86,7 +86,7 @@ void Momentary::IsCorrect(st::Success& Success)
     mLastToggle = system_clock::now();
 
     fmt::print("momentary fail {} \n", mMessage);
-    Success.mInactiveFailCount++;
+    Success.mInactiveFails.insert(mPiSerial);
   }
 
   mUpdates.clear();

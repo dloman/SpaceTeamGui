@@ -8,7 +8,7 @@ namespace st
   {
     std::unordered_set<st::SerialId> mIsActiveCompleted;
 
-    unsigned mInactiveFailCount = 0;
+    std::unordered_set<st::SerialId> mInactiveFails;
   };
 }
 

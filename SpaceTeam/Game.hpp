@@ -70,9 +70,9 @@ namespace st
 
       st::Success GetSuccess();
 
-      void UpdateScore(bool Success);
+      void UpdateScore(bool Success, const std::unordered_set<st::SerialId>& InactiveFails = {});
 
-      void SendScore();
+      void SendScore(const std::unordered_set<st::SerialId>&);
 
       size_t GetRoundSizePerPanel();
 

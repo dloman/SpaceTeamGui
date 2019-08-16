@@ -99,7 +99,7 @@ void Digital::IsCorrect(st::Success& Success)
 
     fmt::print("ddddd fail\n {}", mLabel);
 
-    Success.mInactiveFailCount++;
+    Success.mInactiveFails.insert(mPiSerial);
   }
 
   return;

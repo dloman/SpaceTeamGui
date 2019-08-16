@@ -415,6 +415,11 @@ void OnJsonPacket(const std::string& Bytes)
   else if (const auto oValue = Tree.get_optional<uint64_t>("score"))
   {
     gScore = *oValue;
+
+    if (const auto oSerial = Tree.get_optional<uint64_t>("serial"))
+    {
+      fmt::print("fail\n");
+    }
   }
   gWait = false;
 }

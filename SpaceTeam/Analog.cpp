@@ -103,7 +103,7 @@ void Analog::IsCorrect(st::Success& Success)
   {
     mDesiredValue = GetThreshold(mCurrentState).mStart;
 
-    Success.mInactiveFailCount++;
+    Success.mInactiveFails.insert(mPiSerial);
   }
 }
 
