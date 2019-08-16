@@ -288,7 +288,22 @@ int main(int argc, char** argv)
 
   char Input;
 
-  if (argc < 1)
+  fmt::print("argc = {}\n", argc);
+
+  if (argc == 2)
+  {
+    auto StartingIndex = std::atoi(argv[1]);
+
+    std::vector<int> HardCodedLeds = {
+      2,3,4,5,6,10,12,13,14,15,16,17,22,25,26,27,28,29,30,31,32,33,37,38,39};
+
+
+    for (size_t i = StartingIndex; i < HardCodedLeds.size();++i)
+    {
+      Leds.emplace_back(HardCodedLeds[i]);
+    }
+  }
+  else
   {
     for (auto i = 0; i < 48; ++i)
     {
@@ -309,13 +324,11 @@ int main(int argc, char** argv)
         --i;
       }
 
-      fmt::print("found {} of 25\n");
     }
+      fmt::print("found {} of 25\n", Leds.size());
   }
 
   std::bitset<64> Bits(std::numeric_limits<uint64_t>::max());
-
-  //Leds = {2,3,4,5,6,10,14,15,16,17,24,25,26,27,28,29,30,31,32,33,35,37,38,39};
 
   for (const auto Led : Leds)
   {
@@ -374,6 +387,8 @@ int main(int argc, char** argv)
       {
         Tree.add_child(Label, IoTree);
       }
+
+      boost::property_tree::write_json("Config.json", Tree);
     }
 
   }
