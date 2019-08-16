@@ -85,7 +85,7 @@ void Digital::IsCorrect(st::Success& Success)
 
       mIsActive = std::nullopt;
 
-      mDesiredState = mCurrentState < 40 ? 0u : 255u;
+      mDesiredState = mCurrentState;
       fmt::print("dddddsucess\n {}", mLabel);
     }
     return;
