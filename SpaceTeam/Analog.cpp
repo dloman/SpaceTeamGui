@@ -18,9 +18,13 @@ namespace
     {
       if (Name == std::string("Threshold"))
       {
+        auto Start = static_cast<uint8_t>(SubTree.get<int>("Start"));
+
+        auto Stop = static_cast<uint8_t>(SubTree.get<int>("Stop"));
+
         Thresholds.emplace_back(st::Threshold{
-          static_cast<uint8_t>(SubTree.get<int>("Start")),
-          static_cast<uint8_t>(SubTree.get<int>("Stop")),
+          std::min(Start, Stop),
+          std::max(Start, Stop),
           SubTree.get<std::string>("Label")});
       }
     }
@@ -112,7 +116,7 @@ const st::Threshold& Analog::GetThreshold(uint8_t Value) const
     mThresholds.end(),
     [&Value](const auto& x)
     {
-    return (Value >= x.mStart && Value <= x.mStop);
+      return (Value >= x.mStart && Value <= x.mStop);
     });
 
   if (iThreshold == mThresholds.end())

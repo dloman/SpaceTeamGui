@@ -99,7 +99,9 @@ boost::property_tree::ptree GetMomentaryInput(uint64_t Led, uint64_t Pin)
 
   std::this_thread::sleep_for(1s);
 
-  std::bitset<64> Bits(st::hw::getGPIOVal());
+  std::array<uint8_t, 48> Bits;
+
+  st::hw::adcReadFIFOAll(Bits);
 
   Input.put("Default Value", static_cast<int>(Bits[Pin]));
 
