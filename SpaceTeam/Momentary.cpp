@@ -46,6 +46,8 @@ bool Momentary::WasPressed()
   {
     if (IsPressed(State, mDefaultValue))
     {
+      fmt::print("{} ", mLabel);
+      fmt::print("{:02x}, {:02x} \n", State, mDefaultValue);
       return true;
     }
   }
@@ -124,7 +126,7 @@ const std::string& Momentary::GetMessage() const
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool Momentary::GetDefaultValue() const
+uint8_t Momentary::GetDefaultValue() const
 {
   return mDefaultValue;
 }

@@ -24,7 +24,7 @@ namespace st
 
       const std::string& GetMessage() const;
 
-      bool GetDefaultValue() const;
+      uint8_t GetDefaultValue() const;
 
     private:
 

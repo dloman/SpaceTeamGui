@@ -93,11 +93,11 @@ void Digital::IsCorrect(st::Success& Success)
 
   if (!Correct)
   {
-    fmt::print("desired fail\n {:02x} {:02x}", mDesiredState, mCurrentState);
+    fmt::print("digital fail {}", mLabel);
+    fmt::print("{:02x} {:02x}", mDesiredState, mCurrentState);
 
     mDesiredState = mCurrentState;
 
-    fmt::print("ddddd fail\n {}", mLabel);
 
     Success.mInactiveFailCount++;
   }

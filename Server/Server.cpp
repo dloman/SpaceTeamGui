@@ -107,7 +107,7 @@ st::Game GetGameStart(
   {
     std::lock_guard Lock(Mutex);
 
-    if (Panels.size() == 2 && HasSerials(Panels))
+    if (Panels.size() == 3 && HasSerials(Panels))
     {
       std::this_thread::sleep_for(std::chrono::seconds(1));
       Temp = false;

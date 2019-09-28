@@ -103,6 +103,8 @@ void Analog::IsCorrect(st::Success& Success)
   {
     mDesiredValue = GetThreshold(mCurrentState).mStart;
 
+    fmt::print("fail analog {} \n", mLabel);
+
     Success.mInactiveFailCount++;
   }
 }

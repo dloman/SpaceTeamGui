@@ -569,7 +569,7 @@ const std::vector<st::Output>& Game::GetOutputs() const
 //------------------------------------------------------------------------------
 size_t Game::GetRoundSizePerPanel()
 {
-  return 5 + (2 * (mCurrentRound / 3));
+  return 10 + (2 * (mCurrentRound / 3));
 }
 
 //------------------------------------------------------------------------------

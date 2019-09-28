@@ -223,9 +223,9 @@ namespace sim
 
     const st::OutputId mLedId;
 
-    const bool mDefaultValue;
+    const uint8_t mDefaultValue;
 
-    bool mState;
+    uint8_t mState;
 
     bool mIsActive;
 
@@ -242,7 +242,16 @@ namespace sim
 
       ImGui::SameLine();
 
-      mState = ImGui::Button(mMessage.c_str(), {-1,0}) ? !mDefaultValue : mDefaultValue;
+      const auto ClickedValue = mDefaultValue < 30 ? 255 : 0;
+
+      const auto IsClicked = ImGui::Button(mMessage.c_str(), {-1,0});
+
+      if (IsClicked)
+      {
+        fmt::print("clickex\n");
+      }
+
+      mState = IsClicked ? ClickedValue: mDefaultValue;
     }
 
     //--------------------------------------------------------------------------
@@ -350,7 +359,7 @@ void SendState(std::vector<DrawVariant>& Things)
           return;
         }
 
-        AnalogOutput[Input.mId.mButtonIndex.get()] = Input.mState ? !Input.mDefaultValue : Input.mDefaultValue;
+        AnalogOutput[Input.mId.mButtonIndex.get()] = Input.mState;
       },
       [&AnalogOutput](sim::Digital& Input)
       {
@@ -363,6 +372,12 @@ void SendState(std::vector<DrawVariant>& Things)
       }},
       DrawVariant);
   }
+
+  for (const auto& Val : AnalogOutput)
+  {
+    fmt::print("{:02x} ", Val);
+  }
+  fmt::print("\n");
 
   if (gpClient)
   {
